@@ -1,57 +1,56 @@
 import { Level } from "level";
 import path from "path";
+import fs from "fs/promises";
 
-class Storage {
-  constructor(repoPath = ".dgit") {
-    this.dbPath = path.join(repoPath, "db");
-    this.db = null;
+export class Storage {
+  constructor() {
+    this.root = path.join(process.cwd(), ".dgit");
+    this.objectsDir = path.join(this.root, "objects");
+    this.refsDir = path.join(this.root, "refs");
+    this.dbPath = path.join(this.root, "db");
+    console.log("Storage initialized at:", this.root); // Debug log
   }
 
   async init() {
     try {
+      await fs.mkdir(this.root, { recursive: true });
+      await fs.mkdir(this.objectsDir, { recursive: true });
+      await fs.mkdir(this.refsDir, { recursive: true });
+
       // Initialize the database
-      this.db = new Level(this.dbPath, {
-        valueEncoding: "json",
-      });
+      if (!this.db) {
+        this.db = new Level(this.dbPath);
+        await this.db.open();
+      }
 
-      // Wait for database to open
-      await this.db.open();
-
-      // Initialize database with metadata
-      await this.db.put("metadata", {
-        version: "1.0",
-        created_at: new Date().toISOString(),
-      });
+      console.log("Storage initialized with database");
     } catch (error) {
-      throw new Error(`Failed to initialize storage: ${error.message}`);
+      console.error("Failed to initialize storage:", error);
+      throw error;
     }
   }
 
   // Commit History Methods
-  async saveCommit(commitHash, commitData) {
+  async saveCommit(hash, commitData) {
     const db = await this.ensureDB();
     try {
-      await db.put(`commit:${commitHash}`, commitData);
-
-      // Update commit history
-      const history = (await this.getCommitHistory()) || [];
-      history.unshift(commitHash);
-      await db.put("commit:history", history);
-
-      // Update branch pointer
-      const branch = await this.getCurrentBranch();
-      await db.put(`branch:${branch}`, commitHash);
+      // Store commit data as a JSON string
+      await db.put(`commit:${hash}`, JSON.stringify(commitData));
+      console.log("Debug - Saved commit data:", commitData);
     } catch (error) {
       throw new Error(`Failed to save commit: ${error.message}`);
     }
   }
 
-  async getCommit(commitHash) {
+  async getCommit(hash) {
     const db = await this.ensureDB();
     try {
-      return await db.get(`commit:${commitHash}`);
+      // Get and parse the commit data
+      const commitStr = await db.get(`commit:${hash}`);
+      return JSON.parse(commitStr);
     } catch (error) {
       if (error.code === "LEVEL_NOT_FOUND") {
+        console.log("Debug - Commit not found:", hash);
         return null;
       }
       throw error;
@@ -59,14 +58,63 @@ class Storage {
   }
 
   async getCommitHistory() {
-    const db = await this.ensureDB();
     try {
-      return await db.get("commit:history");
-    } catch (error) {
-      if (error.code === "LEVEL_NOT_FOUND") {
+      // Get the current branch name from HEAD
+      const headPath = path.join(this.root, "HEAD");
+      console.log("Looking for HEAD at:", headPath);
+
+      if (!(await fileExists(headPath))) {
+        console.log("HEAD file not found");
         return [];
       }
-      throw error;
+
+      const headContent = await fs.readFile(headPath, "utf8");
+      console.log("HEAD content:", headContent);
+
+      // Get branch ref from HEAD
+      const branchRef = headContent.trim().split(" ")[1]; // Format: "ref: refs/heads/main"
+      if (!branchRef) {
+        console.log("No branch reference found in HEAD");
+        return [];
+      }
+
+      // Get latest commit from branch
+      const branchPath = path.join(this.root, branchRef);
+      console.log("Looking for branch at:", branchPath);
+
+      if (!(await fileExists(branchPath))) {
+        console.log("Branch file not found");
+        return [];
+      }
+
+      const latestCommitHash = (await fs.readFile(branchPath, "utf8")).trim();
+      console.log("Latest commit hash:", latestCommitHash);
+
+      // Build history by following parent links
+      const history = [];
+      let currentHash = latestCommitHash;
+
+      while (currentHash) {
+        console.log("Processing commit:", currentHash);
+        const commit = await this.getCommit(currentHash);
+
+        if (!commit) {
+          console.log("Could not find commit data for:", currentHash);
+          break;
+        }
+
+        history.push(currentHash);
+        console.log("Added to history. Parent is:", commit.parent);
+
+        // Move to parent commit
+        currentHash = commit.parent;
+      }
+
+      console.log("Final history length:", history.length);
+      return history;
+    } catch (error) {
+      console.error("Error getting commit history:", error);
+      return [];
     }
   }
 
@@ -120,7 +168,7 @@ class Storage {
   async saveIndex(indexData) {
     const db = await this.ensureDB();
     try {
-      await db.put("index", indexData);
+      await db.put("index", JSON.stringify(indexData)); // Convert to string before storing
     } catch (error) {
       throw new Error(`Failed to save index: ${error.message}`);
     }
@@ -129,7 +177,8 @@ class Storage {
   async getIndex() {
     const db = await this.ensureDB();
     try {
-      return await db.get("index");
+      const indexData = await db.get("index");
+      return JSON.parse(indexData); // Parse the stored string
     } catch (error) {
       if (error.code === "LEVEL_NOT_FOUND") {
         return { files: {} };
@@ -157,6 +206,45 @@ class Storage {
       await this.init();
     }
     return this.db;
+  }
+
+  async updateRef(ref, hash) {
+    try {
+      if (ref === "HEAD") {
+        // If this is the first commit, initialize main branch
+        const headPath = path.join(this.root, "HEAD");
+        const mainBranchPath = path.join(this.refsDir, "heads", "main");
+
+        // Ensure refs/heads directory exists
+        await fs.mkdir(path.join(this.refsDir, "heads"), { recursive: true });
+
+        // Update HEAD to point to main branch if it doesn't exist
+        if (!(await fileExists(headPath))) {
+          await fs.writeFile(headPath, "ref: refs/heads/main");
+        }
+
+        // Update main branch with new commit hash
+        await fs.writeFile(mainBranchPath, hash);
+
+        console.log("Debug - Updated refs:", {
+          head: await fs.readFile(headPath, "utf8"),
+          main: await fs.readFile(mainBranchPath, "utf8"),
+        });
+      }
+    } catch (error) {
+      console.error("Error updating ref:", error);
+      throw error;
+    }
+  }
+}
+
+// Helper function to check if file exists
+async function fileExists(path) {
+  try {
+    await fs.access(path);
+    return true;
+  } catch {
+    return false;
   }
 }
 

@@ -1,31 +1,21 @@
-import fs from "fs/promises";
-import path from "path";
+import { getStorage } from "../storage/storage.js";
 import crypto from "crypto";
-import { generateKeyPairSync, createSign } from "crypto";
-
-class TreeNode {
-  constructor(name) {
-    this.name = name;
-    this.children = new Map();
-    this.hash = null;
-    this.type = "tree";
-  }
-}
+import os from "os";
 
 export async function createCommit({ message }) {
   try {
-    // Ensure we're in a dgit repository
-    await fs.access(".dgit");
+    console.log("Starting commit process..."); // Debug 1
 
-    // Read the index
-    let index = { files: {} };
-    try {
-      const indexPath = path.join(".dgit", "index");
-      const indexContent = await fs.readFile(indexPath, "utf8");
-      index = JSON.parse(indexContent);
-    } catch (error) {
-      // If index doesn't exist, treat as empty
-    }
+    const storage = getStorage();
+    console.log("Got storage instance..."); // Debug 2
+
+    await storage.init();
+    console.log("Storage initialized..."); // Debug 3
+
+    // Get staged files from storage
+    console.log("Attempting to read index..."); // Debug 4
+    const index = await storage.getIndex();
+    console.log("Debug - Current index:", JSON.stringify(index, null, 2)); // Debug 5
 
     // Check if there are files to commit
     if (!index.files || Object.keys(index.files).length === 0) {
@@ -33,147 +23,85 @@ export async function createCommit({ message }) {
       process.exit(1);
     }
 
-    // Build tree structure
-    const root = new TreeNode("");
-    for (const [filepath, fileInfo] of Object.entries(index.files)) {
-      const parts = filepath.split("/");
-      let current = root;
+    console.log("Found files to commit..."); // Debug 6
 
-      // Create tree structure
-      for (let i = 0; i < parts.length - 1; i++) {
-        const part = parts[i];
-        if (!current.children.has(part)) {
-          current.children.set(part, new TreeNode(part));
-        }
-        current = current.children.get(part);
-      }
+    // Get author information
+    const author = {
+      name:
+        process.env.DGIT_USER_NAME ||
+        process.env.GIT_AUTHOR_NAME ||
+        os.userInfo().username,
+      email:
+        process.env.DGIT_USER_EMAIL ||
+        process.env.GIT_AUTHOR_EMAIL ||
+        `${os.userInfo().username}@${os.hostname()}`,
+    };
 
-      // Add file to tree
-      const fileName = parts[parts.length - 1];
-      current.children.set(fileName, {
-        name: fileName,
-        hash: fileInfo.hash,
-        type: "blob",
-      });
-    }
-
-    // Hash the tree structure
-    async function hashTree(node) {
-      if (node.type === "blob") {
-        return node.hash;
-      }
-
-      const entries = Array.from(node.children.entries()).sort(([a], [b]) =>
-        a.localeCompare(b)
-      );
-
-      let treeContent = "";
-      for (const [name, child] of entries) {
-        const childHash = await hashTree(child);
-        // Add mode and type to the tree entry
-        const mode = child.type === "blob" ? "100644" : "040000";
-        treeContent += `${child.type} ${mode} ${childHash} ${name}\n`;
-      }
-
-      const hash = crypto
-        .createHash("sha1")
-        .update("tree " + treeContent.length + "\0")
-        .update(treeContent)
-        .digest("hex");
-
-      // Store tree object
-      const treePath = path.join(".dgit", "objects", hash.slice(0, 2));
-      await fs.mkdir(treePath, { recursive: true });
-      await fs.writeFile(path.join(treePath, hash.slice(2)), treeContent);
-
-      return hash;
-    }
-
-    // Generate or load commit signing keys
-    const keysPath = path.join(".dgit", "keys");
-    let privateKey, publicKey;
-
-    try {
-      privateKey = await fs.readFile(
-        path.join(keysPath, "private.pem"),
-        "utf8"
-      );
-      publicKey = await fs.readFile(path.join(keysPath, "public.pem"), "utf8");
-    } catch {
-      // Generate new key pair if none exists
-      await fs.mkdir(keysPath, { recursive: true });
-      const keys = generateKeyPairSync("rsa", {
-        modulusLength: 2048,
-        publicKeyEncoding: { type: "spki", format: "pem" },
-        privateKeyEncoding: { type: "pkcs8", format: "pem" },
-      });
-      privateKey = keys.privateKey;
-      publicKey = keys.publicKey;
-
-      await fs.writeFile(path.join(keysPath, "private.pem"), privateKey);
-      await fs.writeFile(path.join(keysPath, "public.pem"), publicKey);
-    }
-
-    // Get parent commit hash
-    let parentHash = null;
-    try {
-      const headContent = await fs.readFile(path.join(".dgit", "HEAD"), "utf8");
-      const ref = headContent.trim().split(" ")[1];
-      parentHash = await fs.readFile(path.join(".dgit", ref), "utf8");
-    } catch {
-      // No parent commit
-    }
-
-    // Create tree
-    const treeHash = await hashTree(root);
-
-    // Create commit object
+    // Create commit object with detailed author info
     const commitData = {
-      tree: treeHash,
-      parent: parentHash,
-      author: process.env.USER || "unknown",
-      timestamp: new Date().toISOString(),
+      tree: index.files,
+      parent: null,
+      author: `${author.name} <${author.email}>`,
+      timestamp: new Date().toISOString(), // ISO string format for better date handling
       message: message,
     };
 
-    const commitContent = JSON.stringify(commitData, null, 2);
+    console.log("Created commit data..."); // Debug 7
 
-    // Sign the commit
-    const signer = createSign("SHA256");
-    signer.update(commitContent);
-    const signature = signer.sign(privateKey, "hex");
+    // Get parent commit hash
+    try {
+      const history = await storage.getCommitHistory();
+      if (history.length > 0) {
+        commitData.parent = history[0].hash;
+        console.log("Found parent commit:", commitData.parent); // Debug 8
+      }
+    } catch (error) {
+      console.log("No previous commits found");
+    }
 
-    // Create final commit object with signature
-    const finalCommit = {
-      ...commitData,
-      signature,
-    };
+    // Hash the commit
+    const commitStr = JSON.stringify(commitData);
+    console.log("Commit data to hash:", commitStr); // Debug 9
 
-    // Hash and store the commit
-    const commitStr = JSON.stringify(finalCommit, null, 2);
     const commitHash = crypto
       .createHash("sha1")
       .update("commit " + commitStr.length + "\0")
       .update(commitStr)
       .digest("hex");
 
-    // Store commit object
-    const commitPath = path.join(".dgit", "objects", commitHash.slice(0, 2));
-    await fs.mkdir(commitPath, { recursive: true });
-    await fs.writeFile(path.join(commitPath, commitHash.slice(2)), commitStr);
+    console.log("Generated commit hash:", commitHash); // Debug 10
 
-    // Update HEAD and branch reference
-    const headContent = await fs.readFile(path.join(".dgit", "HEAD"), "utf8");
-    const ref = headContent.trim().split(" ")[1];
-    await fs.mkdir(path.dirname(path.join(".dgit", ref)), { recursive: true });
-    await fs.writeFile(path.join(".dgit", ref), commitHash);
+    // Save commit to storage
+    console.log("Saving commit to storage..."); // Debug 11
+    await storage.saveCommit(commitHash, commitData);
+    console.log("Commit saved to storage."); // Debug 12
 
-    console.log(`Created commit ${commitHash}`);
+    // Update HEAD and branch
+    console.log("Updating refs..."); // Debug 13
+    await storage.updateRef("HEAD", commitHash);
+    console.log("Refs updated."); // Debug 14
+
+    // Pretty print the commit information
+    console.log("\n----------------------------------------");
+    console.log(`Commit: ${commitHash}`);
     console.log(`Author: ${commitData.author}`);
-    console.log(`Date: ${commitData.timestamp}`);
-    console.log(`\n${message}`);
+    console.log(`Date: ${new Date(commitData.timestamp).toLocaleString()}`);
+    console.log("\n    " + message);
+
+    // Show what files were committed
+    console.log("\nFiles:");
+    Object.keys(index.files).forEach((file) => {
+      console.log(`    ${file}`);
+    });
+    console.log("----------------------------------------");
+
+    // Clear the index after commit
+    console.log("Clearing index..."); // Debug 15
+    await storage.saveIndex({ files: {} });
+    console.log("Index cleared."); // Debug 16
   } catch (error) {
-    console.error("Error creating commit:", error.message);
+    console.error("Error creating commit:", error);
+    console.error("Stack trace:", error.stack);
     process.exit(1);
   }
 }
