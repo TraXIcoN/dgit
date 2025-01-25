@@ -1,10 +1,184 @@
 <ul class="nav-list">
-  {%- assign pages_list = site.html_pages | sort:"nav_order" -%} {%- for node in
-  pages_list -%} {%- unless node.nav_exclude -%}
-  <li class="nav-list-item{% if page.url == node.url %} active{% endif %}">
-    <a href="{{ node.url | absolute_url }}" class="nav-list-link"
+  {%- assign ordered_pages_list = site.html_pages | where_exp:"item",
+  "item.nav_order != nil" | sort:"nav_order" -%} {%- assign unordered_pages_list
+  = site.html_pages | where_exp:"item", "item.nav_order == nil" -%} {%- assign
+  pages_list = ordered_pages_list | concat: unordered_pages_list -%} {%- for
+  node in pages_list -%} {%- unless node.nav_exclude -%} {%- if node.parent ==
+  nil -%}
+  <li
+    class="nav-list-item{% if node.has_children %} has-children{% endif %}{% if page.url == node.url or page.parent == node.title %} active{% endif %}"
+  >
+    {%- if node.has_children -%}
+    <button
+      class="nav-list-expander btn-reset"
+      aria-label="Toggle {{ node.title }} submenu"
+      aria-pressed="{% if page.url == node.url or page.parent == node.title %}true{% else %}false{% endif %}"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        class="nav-list-expander-icon"
+      >
+        <polygon
+          fill="#ffffff"
+          points="12,16 6,10 7.4,8.6 12,13.2 16.6,8.6 18,10"
+        />
+      </svg>
+    </button>
+    {%- endif -%}
+    <a
+      href="{{ node.url | relative_url }}"
+      class="nav-list-link{% if page.url == node.url %} active{% endif %}"
       >{{ node.title }}</a
     >
+    {%- if node.has_children -%}
+    <ul class="nav-list-child-list">
+      {%- for child in pages_list -%} {%- unless child.nav_exclude -%} {%- if
+      child.parent == node.title -%}
+      <li
+        class="nav-list-item {% if page.url == child.url %} active{% endif %}"
+      >
+        <a
+          href="{{ child.url | relative_url }}"
+          class="nav-list-link{% if page.url == child.url %} active{% endif %}"
+          >{{ child.title }}</a
+        >
+      </li>
+      {%- endif -%} {%- endunless -%} {%- endfor -%}
+    </ul>
+    {%- endif -%}
   </li>
-  {%- endunless -%} {%- endfor -%}
+  {%- endif -%} {%- endunless -%} {%- endfor -%}
 </ul>
+
+<style>
+  .nav-list,
+  .nav-list-child-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+  }
+
+  .nav-list-child-list {
+    padding-left: 24px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .nav-list-item.active > .nav-list-child-list {
+    max-height: 500px; /* Adjust this value based on your maximum expected height */
+    transition: max-height 0.3s ease-in;
+  }
+
+  .nav-list-item {
+    padding: 0;
+    margin: 0;
+  }
+
+  .nav-list-expander {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    margin-right: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .nav-list-expander-icon {
+    transition: transform 0.2s ease;
+    width: 24px;
+    height: 24px;
+  }
+
+  .nav-list-expander[aria-pressed="true"] .nav-list-expander-icon {
+    transform: rotate(180deg);
+  }
+
+  .nav-list-expander:hover .nav-list-expander-icon {
+    opacity: 0.8;
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Auto-expand if current page is a child
+    const currentPath = window.location.pathname;
+    const parentItems = document.querySelectorAll(
+      ".nav-list-item.has-children"
+    );
+
+    // First collapse all items
+    parentItems.forEach((item) => {
+      const expander = item.querySelector(".nav-list-expander");
+      if (expander) {
+        expander.setAttribute("aria-pressed", "false");
+      }
+      item.classList.remove("active");
+    });
+
+    // Then expand only the relevant item
+    parentItems.forEach((item) => {
+      const childLinks = item.querySelectorAll(
+        ".nav-list-child-list .nav-list-link"
+      );
+      const shouldExpand = Array.from(childLinks).some(
+        (link) => link.getAttribute("href") === currentPath
+      );
+
+      if (shouldExpand) {
+        item.classList.add("active");
+        const expander = item.querySelector(".nav-list-expander");
+        if (expander) {
+          expander.setAttribute("aria-pressed", "true");
+        }
+      }
+    });
+
+    // Handle click events
+    const expanders = document.querySelectorAll(".nav-list-expander");
+    expanders.forEach((button) => {
+      button.addEventListener("click", function (e) {
+        e.preventDefault();
+        const pressed = this.getAttribute("aria-pressed") === "true";
+
+        // First collapse all other items
+        parentItems.forEach((item) => {
+          if (item !== this.closest(".nav-list-item")) {
+            const otherExpander = item.querySelector(".nav-list-expander");
+            if (otherExpander) {
+              otherExpander.setAttribute("aria-pressed", "false");
+            }
+            item.classList.remove("active");
+          }
+        });
+
+        // Then toggle the clicked item
+        this.setAttribute("aria-pressed", !pressed);
+        const listItem = this.closest(".nav-list-item");
+        listItem.classList.toggle("active");
+      });
+    });
+
+    // Add click handlers for nav links
+    const navLinks = document.querySelectorAll(".nav-list-link");
+    navLinks.forEach((link) => {
+      link.addEventListener("click", function (e) {
+        const parentItem = this.closest(".nav-list-item.has-children");
+        // Only handle links that would collapse a section
+        if (parentItem && parentItem.classList.contains("active")) {
+          e.preventDefault();
+          // Remove active class to trigger collapse animation
+          parentItem.classList.remove("active");
+          // Navigate after animation completes
+          setTimeout(() => {
+            window.location.href = this.href;
+          }, 300); // Match this with your CSS transition duration
+        }
+      });
+    });
+  });
+</script>
