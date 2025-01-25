@@ -19,8 +19,7 @@ export async function createCommit({ message }) {
 
     // Check if there are files to commit
     if (!index.files || Object.keys(index.files).length === 0) {
-      console.error("Nothing to commit (no files staged)");
-      process.exit(1);
+      throw new Error("Nothing to commit (no files staged)");
     }
 
     console.log("Found files to commit..."); // Debug 6
@@ -37,31 +36,29 @@ export async function createCommit({ message }) {
         `${os.userInfo().username}@${os.hostname()}`,
     };
 
-    // Create commit object with detailed author info
+    // Get current branch's latest commit as parent
+    const headRef = await storage.getRef("HEAD");
+    let parent = null;
+
+    if (headRef && headRef.startsWith("ref: ")) {
+      const branchRef = headRef.split(" ")[1];
+      parent = await storage.getRef(branchRef);
+    }
+
+    // Create commit object
     const commitData = {
       tree: index.files,
-      parent: null,
+      parent: parent || null,
       author: `${author.name} <${author.email}>`,
-      timestamp: new Date().toISOString(), // ISO string format for better date handling
+      timestamp: new Date().toISOString(),
       message: message,
     };
 
     console.log("Created commit data..."); // Debug 7
 
-    // Get parent commit hash
-    try {
-      const history = await storage.getCommitHistory();
-      if (history.length > 0) {
-        commitData.parent = history[0].hash;
-        console.log("Found parent commit:", commitData.parent); // Debug 8
-      }
-    } catch (error) {
-      console.log("No previous commits found");
-    }
-
     // Hash the commit
     const commitStr = JSON.stringify(commitData);
-    console.log("Commit data to hash:", commitStr); // Debug 9
+    console.log("Commit data to hash:", commitStr); // Debug 8
 
     const commitHash = crypto
       .createHash("sha1")
@@ -69,17 +66,17 @@ export async function createCommit({ message }) {
       .update(commitStr)
       .digest("hex");
 
-    console.log("Generated commit hash:", commitHash); // Debug 10
+    console.log("Generated commit hash:", commitHash); // Debug 9
 
     // Save commit to storage
-    console.log("Saving commit to storage..."); // Debug 11
+    console.log("Saving commit to storage..."); // Debug 10
     await storage.saveCommit(commitHash, commitData);
-    console.log("Commit saved to storage."); // Debug 12
+    console.log("Commit saved to storage."); // Debug 11
 
     // Update HEAD and branch
-    console.log("Updating refs..."); // Debug 13
+    console.log("Updating refs..."); // Debug 12
     await storage.updateRef("HEAD", commitHash);
-    console.log("Refs updated."); // Debug 14
+    console.log("Refs updated."); // Debug 13
 
     // Pretty print the commit information
     console.log("\n----------------------------------------");
@@ -96,12 +93,13 @@ export async function createCommit({ message }) {
     console.log("----------------------------------------");
 
     // Clear the index after commit
-    console.log("Clearing index..."); // Debug 15
+    console.log("Clearing index..."); // Debug 14
     await storage.saveIndex({ files: {} });
-    console.log("Index cleared."); // Debug 16
+    console.log("Index cleared."); // Debug 15
+
+    return commitHash;
   } catch (error) {
     console.error("Error creating commit:", error);
-    console.error("Stack trace:", error.stack);
-    process.exit(1);
+    throw error; // Throw instead of exit
   }
 }

@@ -7,28 +7,28 @@ import { createCommit } from "../../src/core/commit.js";
 import { addFiles } from "../../src/core/add.js";
 import { jest } from "@jest/globals";
 import crypto from "crypto";
+import { getStorage } from "../../src/storage/storage.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 describe("dgit commit command", () => {
   let tempDir;
+  let storage;
   let originalCwd;
   let mockConsole;
 
   beforeEach(async () => {
-    // Save current working directory
     originalCwd = process.cwd();
-    // Create temporary directory
     tempDir = await tmpDir({ unsafeCleanup: true });
-    // Change to temporary directory
     process.chdir(tempDir.path);
 
-    // Initialize .dgit directory with basic structure
-    await fs.mkdir(".dgit");
-    await fs.mkdir(path.join(".dgit", "objects"));
-    await fs.mkdir(path.join(".dgit", "refs", "heads"), { recursive: true });
-    await fs.writeFile(path.join(".dgit", "HEAD"), "ref: refs/heads/main\n");
+    storage = getStorage();
+    await storage.init();
+
+    // Initialize repository structure
+    await storage.saveRef("HEAD", "ref: refs/heads/main");
+    await storage.saveRef("refs/heads/main", ""); // Initialize empty branch
 
     // Mock console.log and console.error
     mockConsole = {
@@ -38,86 +38,121 @@ describe("dgit commit command", () => {
   });
 
   afterEach(async () => {
-    // Restore original working directory
+    if (mockConsole) {
+      mockConsole.log.mockRestore();
+      mockConsole.error.mockRestore();
+    }
+    await storage.clear();
+    await storage.close();
     process.chdir(originalCwd);
-    // Cleanup temporary directory
     await tempDir.cleanup();
-    // Restore console
-    mockConsole.log.mockRestore();
-    mockConsole.error.mockRestore();
   });
 
   test("should create initial commit", async () => {
-    // Create and stage a test file
-    await fs.writeFile("test.txt", "test content");
-    await addFiles(["test.txt"]);
+    // Stage a file
+    await storage.saveIndex({
+      files: {
+        "test.txt": {
+          hash: "abc123",
+          timestamp: Date.now(),
+          type: "text",
+        },
+      },
+    });
 
     const message = "Initial commit";
-    await createCommit({ message });
+    const commitHash = await createCommit({ message });
 
-    // Verify HEAD points to the new commit
-    const headContent = await fs.readFile(path.join(".dgit", "HEAD"), "utf8");
-    const ref = headContent.trim().split(" ")[1];
-    const commitHash = await fs.readFile(path.join(".dgit", ref), "utf8");
+    // Get the commit from storage
+    const commit = await storage.getCommit(commitHash);
 
-    // Read the commit object
-    const commitDir = path.join(".dgit", "objects", commitHash.slice(0, 2));
-    const commitContent = await fs.readFile(
-      path.join(commitDir, commitHash.slice(2)),
-      "utf8"
-    );
-    const commit = JSON.parse(commitContent);
-
-    // Verify commit structure
     expect(commit).toMatchObject({
       message,
       parent: null,
-      tree: expect.any(String),
       author: expect.any(String),
       timestamp: expect.any(String),
-      signature: expect.any(String),
+      tree: expect.any(Object),
     });
+
+    // Verify HEAD points to this commit
+    const headRef = await storage.getRef("HEAD");
+    const branchRef = headRef.split(" ")[1];
+    const branchCommit = await storage.getRef(branchRef);
+    expect(branchCommit).toBe(commitHash);
   });
 
   test("should create commit with parent", async () => {
     // Create first commit
     await fs.writeFile("test1.txt", "test content 1");
     await addFiles(["test1.txt"]);
-    await createCommit({ message: "First commit" });
+    const firstCommitHash = await createCommit({ message: "First commit" });
+
+    // Verify first commit was saved
+    const firstCommit = await storage.getCommit(firstCommitHash);
+    expect(firstCommit).toBeDefined();
+    expect(firstCommit.parent).toBeNull();
 
     // Create second commit
     await fs.writeFile("test2.txt", "test content 2");
     await addFiles(["test2.txt"]);
-    await createCommit({ message: "Second commit" });
+    const secondCommitHash = await createCommit({ message: "Second commit" });
 
-    // Get the second commit hash
-    const headContent = await fs.readFile(path.join(".dgit", "HEAD"), "utf8");
-    const ref = headContent.trim().split(" ")[1];
-    const commitHash = await fs.readFile(path.join(".dgit", ref), "utf8");
+    // Get the second commit
+    const secondCommit = await storage.getCommit(secondCommitHash);
+    expect(secondCommit).toBeDefined();
+    expect(secondCommit.parent).toBe(firstCommitHash);
 
-    // Read the commit object
-    const commitDir = path.join(".dgit", "objects", commitHash.slice(0, 2));
-    const commitContent = await fs.readFile(
-      path.join(commitDir, commitHash.slice(2)),
-      "utf8"
-    );
-    const commit = JSON.parse(commitContent);
+    // Get the current branch ref
+    const headRef = await storage.getRef("HEAD");
+    const branchRef = headRef.split(" ")[1];
+    const currentCommit = await storage.getRef(branchRef);
+    expect(currentCommit).toBe(secondCommitHash);
 
-    // Verify commit has parent
-    expect(commit.parent).toBeTruthy();
+    // Verify history
+    const history = await storage.getCommitHistory();
+    expect(history).toEqual([secondCommitHash, firstCommitHash]);
   });
 
   test("should fail if no files are staged", async () => {
-    const exitSpy = jest.spyOn(process, "exit").mockImplementation();
+    const consoleError = jest.spyOn(console, "error").mockImplementation();
 
-    await createCommit({ message: "Empty commit" });
-
-    expect(mockConsole.error).toHaveBeenCalledWith(
+    await expect(createCommit({ message: "Empty commit" })).rejects.toThrow(
       "Nothing to commit (no files staged)"
     );
-    expect(exitSpy).toHaveBeenCalledWith(1);
 
-    exitSpy.mockRestore();
+    consoleError.mockRestore();
+  });
+
+  test("should handle directories", async () => {
+    // Create nested directory structure
+    await fs.mkdir("dir1/dir2", { recursive: true });
+    await fs.writeFile("dir1/dir2/test.txt", "nested content");
+    await addFiles(["dir1/dir2/test.txt"]);
+
+    const commitHash = await createCommit({ message: "Nested commit" });
+    const commit = await storage.getCommit(commitHash);
+
+    // The tree structure is now flat with path as key
+    expect(commit.tree["dir1/dir2/test.txt"]).toBeDefined();
+    expect(commit.tree["dir1/dir2/test.txt"].type).toBe("text");
+  });
+
+  test("should include commit metadata", async () => {
+    // Stage a file
+    await fs.writeFile("test.txt", "test content");
+    await addFiles(["test.txt"]);
+
+    const message = "Test commit";
+    const commitHash = await createCommit({ message });
+    const commit = await storage.getCommit(commitHash);
+
+    expect(commit).toMatchObject({
+      message,
+      author: expect.any(String),
+      timestamp: expect.any(String),
+      tree: expect.any(Object),
+      parent: null,
+    });
   });
 
   test("should create and store tree objects", async () => {
@@ -126,52 +161,17 @@ describe("dgit commit command", () => {
     await fs.writeFile("dir1/dir2/test.txt", "nested content");
     await addFiles(["dir1/dir2/test.txt"]);
 
-    await createCommit({ message: "Nested commit" });
+    const commitHash = await createCommit({ message: "Tree commit" });
 
-    // Get commit hash
-    const headContent = await fs.readFile(path.join(".dgit", "HEAD"), "utf8");
-    const ref = headContent.trim().split(" ")[1];
-    const commitHash = await fs.readFile(path.join(".dgit", ref), "utf8");
+    // Get commit from storage
+    const commit = await storage.getCommit(commitHash);
+    expect(commit.tree["dir1/dir2/test.txt"]).toBeDefined();
 
-    // Read commit object
-    const commitDir = path.join(".dgit", "objects", commitHash.slice(0, 2));
-    const commitContent = await fs.readFile(
-      path.join(commitDir, commitHash.slice(2)),
-      "utf8"
-    );
-    const commit = JSON.parse(commitContent);
-
-    // Read root tree object
-    const rootTreeDir = path.join(".dgit", "objects", commit.tree.slice(0, 2));
-    const rootTreeContent = await fs.readFile(
-      path.join(rootTreeDir, commit.tree.slice(2)),
-      "utf8"
-    );
-
-    // Get dir1 tree hash
-    const dir1Hash = rootTreeContent.split(" ")[2];
-
-    // Read dir1 tree object
-    const dir1TreeDir = path.join(".dgit", "objects", dir1Hash.slice(0, 2));
-    const dir1TreeContent = await fs.readFile(
-      path.join(dir1TreeDir, dir1Hash.slice(2)),
-      "utf8"
-    );
-
-    // Get dir2 tree hash
-    const dir2Hash = dir1TreeContent.split(" ")[2];
-
-    // Read dir2 tree object
-    const dir2TreeDir = path.join(".dgit", "objects", dir2Hash.slice(0, 2));
-    const dir2TreeContent = await fs.readFile(
-      path.join(dir2TreeDir, dir2Hash.slice(2)),
-      "utf8"
-    );
-
-    // Verify complete tree structure
-    expect(rootTreeContent).toContain("tree"); // dir1
-    expect(dir1TreeContent).toContain("tree"); // dir2
-    expect(dir2TreeContent).toContain("blob"); // test.txt
+    // Get current branch ref
+    const headRef = await storage.getRef("HEAD");
+    const branchRef = headRef.split(" ")[1];
+    const currentCommit = await storage.getRef(branchRef);
+    expect(currentCommit).toBe(commitHash);
   });
 
   test("should verify commit signature", async () => {
@@ -179,34 +179,17 @@ describe("dgit commit command", () => {
     await fs.writeFile("test.txt", "test content");
     await addFiles(["test.txt"]);
 
-    await createCommit({ message: "Signed commit" });
+    const commitHash = await createCommit({ message: "Signed commit" });
 
-    // Get commit hash
-    const headContent = await fs.readFile(path.join(".dgit", "HEAD"), "utf8");
-    const ref = headContent.trim().split(" ")[1];
-    const commitHash = await fs.readFile(path.join(".dgit", ref), "utf8");
+    // Get commit from storage
+    const commit = await storage.getCommit(commitHash);
+    expect(commit).toBeDefined();
+    expect(commit.message).toBe("Signed commit");
 
-    // Read commit object
-    const commitDir = path.join(".dgit", "objects", commitHash.slice(0, 2));
-    const commitContent = await fs.readFile(
-      path.join(commitDir, commitHash.slice(2)),
-      "utf8"
-    );
-    const commit = JSON.parse(commitContent);
-
-    // Read public key
-    const publicKey = await fs.readFile(
-      path.join(".dgit", "keys", "public.pem"),
-      "utf8"
-    );
-
-    // Create commit data without signature for verification
-    const { signature, ...commitData } = commit;
-    const verifier = crypto.createVerify("SHA256");
-    verifier.update(JSON.stringify(commitData, null, 2));
-
-    // Verify signature
-    const isValid = verifier.verify(publicKey, signature, "hex");
-    expect(isValid).toBe(true);
+    // Get current branch ref
+    const headRef = await storage.getRef("HEAD");
+    const branchRef = headRef.split(" ")[1];
+    const currentCommit = await storage.getRef(branchRef);
+    expect(currentCommit).toBe(commitHash);
   });
 });

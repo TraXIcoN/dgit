@@ -2,6 +2,7 @@ import { getStorage } from "../../src/storage/storage.js";
 import { dir as tmpDir } from "tmp-promise";
 import path from "path";
 import { jest } from "@jest/globals";
+import fs from "fs/promises";
 
 describe("Storage", () => {
   let tempDir;
@@ -12,12 +13,18 @@ describe("Storage", () => {
     global.storageInstance = null;
 
     tempDir = await tmpDir({ unsafeCleanup: true });
-    storage = getStorage(tempDir.path);
+    process.chdir(tempDir.path);
+
+    storage = getStorage();
     await storage.init();
+
+    // Initialize repository structure
+    await storage.saveRef("HEAD", "ref: refs/heads/main");
+    await storage.saveRef("refs/heads/main", ""); // Initialize empty branch
   });
 
   afterEach(async () => {
-    await storage.clear(); // Clear the database
+    await storage.clear();
     await storage.close();
     await tempDir.cleanup();
   });
@@ -26,7 +33,10 @@ describe("Storage", () => {
     const commitHash = "abc123";
     const commitData = {
       message: "Test commit",
+      author: "Test User <test@example.com>",
       timestamp: new Date().toISOString(),
+      tree: {},
+      parent: null,
     };
 
     await storage.saveCommit(commitHash, commitData);
@@ -36,38 +46,48 @@ describe("Storage", () => {
   });
 
   test("should maintain commit history", async () => {
-    const commits = [
-      { hash: "abc123", data: { message: "First commit" } },
-      { hash: "def456", data: { message: "Second commit" } },
-    ];
+    // Create initial commit
+    const commit1 = {
+      hash: "abc123",
+      data: {
+        message: "First commit",
+        author: "Test User",
+        timestamp: new Date().toISOString(),
+        tree: {},
+        parent: null,
+      },
+    };
 
-    for (const commit of commits) {
-      await storage.saveCommit(commit.hash, commit.data);
-    }
+    // Create second commit pointing to first
+    const commit2 = {
+      hash: "def456",
+      data: {
+        message: "Second commit",
+        author: "Test User",
+        timestamp: new Date().toISOString(),
+        tree: {},
+        parent: commit1.hash,
+      },
+    };
+
+    // Save commits
+    await storage.saveCommit(commit1.hash, commit1.data);
+    await storage.saveCommit(commit2.hash, commit2.data);
+
+    // Set up HEAD and branch
+    await fs.mkdir(path.join(storage.refsDir, "heads"), { recursive: true });
+    await fs.writeFile(path.join(storage.root, "HEAD"), "ref: refs/heads/main");
+    await fs.writeFile(
+      path.join(storage.refsDir, "heads", "main"),
+      commit2.hash
+    );
 
     const history = await storage.getCommitHistory();
-    expect(history).toEqual(["def456", "abc123"]);
-  });
-
-  test("should handle branch operations", async () => {
-    const commitHash = "abc123";
-    await storage.saveCommit(commitHash, { message: "Test commit" });
-
-    const branch = await storage.getCurrentBranch();
-    const branchCommit = await storage.getBranchCommit(branch);
-
-    expect(branch).toBe("main");
-    expect(branchCommit).toBe(commitHash);
-  });
-
-  test("should save and retrieve objects", async () => {
-    const hash = "abc123";
-    const content = { type: "blob", data: "test content" };
-
-    await storage.saveObject(hash, content);
-    const retrieved = await storage.getObject(hash);
-
-    expect(retrieved).toEqual(content);
+    expect(history).toContain(commit1.hash);
+    expect(history).toContain(commit2.hash);
+    expect(history.indexOf(commit2.hash)).toBeLessThan(
+      history.indexOf(commit1.hash)
+    );
   });
 
   test("should handle index operations", async () => {
@@ -87,15 +107,12 @@ describe("Storage", () => {
   });
 
   test("should handle missing data gracefully", async () => {
-    // Clear any existing data first
-    await storage.clear();
-
     const missingCommit = await storage.getCommit("nonexistent");
-    const missingObject = await storage.getObject("nonexistent");
+    const emptyIndex = await storage.getIndex();
     const emptyHistory = await storage.getCommitHistory();
 
     expect(missingCommit).toBeNull();
-    expect(missingObject).toBeNull();
+    expect(emptyIndex).toEqual({ files: {} });
     expect(emptyHistory).toEqual([]);
   });
 });

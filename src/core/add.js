@@ -118,6 +118,6 @@ export async function addFiles(files) {
     } else {
       console.error("Error:", error.message);
     }
-    process.exit(1);
+    throw error;
   }
 }
