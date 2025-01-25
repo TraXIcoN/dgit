@@ -8,9 +8,23 @@
     "dgit": "./src/cli/cli.js"
   },
   "scripts": {
-    "start": "node src/cli/cli.js"
+    "start": "node src/cli/cli.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "glob": "^10.3.10",
+    "ignore": "^5.3.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "tmp-promise": "^3.0.3"
+  },
+  "jest": {
+    "transform": {},
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    }
   }
 }
