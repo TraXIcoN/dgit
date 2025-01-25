@@ -4,11 +4,11 @@ plugins:
   - jekyll-remote-theme
   - jekyll-mermaid
 
-# Theme settings
+# Site settings
 title: dGit Documentation
 description: Documentation for the dGit decentralized version control system
 baseurl: "/dgit"
-url: "https://yourusername.github.io"
+url: "https://portfolio.adityamohan.me" # Your custom domain
 
 # Add this to ensure proper URL handling
 permalink: pretty
@@ -31,7 +31,7 @@ search:
 # Aux links for upper right navigation
 aux_links:
   "dGit on GitHub":
-    - "//portfolio.adityamohan.me/dgit"
+    - "//github.com/TraXIcoN/dgit"
 
 # Makes Aux links open in a new tab
 aux_links_new_tab: true
