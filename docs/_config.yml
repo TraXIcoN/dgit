@@ -1,0 +1,61 @@
+# Theme settings
+remote_theme: just-the-docs/just-the-docs@v0.7.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-mermaid
+
+# Theme settings
+title: dGit Documentation
+description: Documentation for the dGit decentralized version control system
+baseurl: "/dgit"
+url: "https://yourusername.github.io"
+
+# Color scheme and custom CSS
+color_scheme: dark
+search_enabled: true
+heading_anchors: true
+
+# Enable copy code button
+enable_copy_code_button: true
+
+# Enable search
+search:
+  heading_level: 3
+  previews: 3
+  preview_words_before: 5
+  preview_words_after: 10
+
+# Aux links for upper right navigation
+aux_links:
+  "dGit on GitHub":
+    - "//github.com/yourusername/dgit"
+
+# Makes Aux links open in a new tab
+aux_links_new_tab: true
+
+# Footer content
+footer_content: "Copyright &copy; 2024. Distributed under an MIT license."
+
+# Back to top link
+back_to_top: true
+back_to_top_text: "Back to top"
+
+# Enable mermaid diagrams
+mermaid:
+  # Version of mermaid library
+  version: "10.6.1"
+  # Remove any theme setting to prevent conflicts with our custom theme
+  initialize:
+    theme: dark
+    themeVariables:
+      background: "#161b22"
+      primaryColor: "#238636"
+      secondaryColor: "#58a6ff"
+      tertiaryColor: "#30363d"
+      fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto'"
+# For local development, comment out remote_theme and use:
+# theme: just-the-docs
+
+# Remove all custom SASS settings to use theme defaults
+sass:
+  style: compressed

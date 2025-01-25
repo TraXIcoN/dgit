@@ -1,0 +1,228 @@
+<h1 id="storage-implementation">Storage Implementation</h1>
+
+<h2 id="overview">Overview</h2>
+
+<p>dGit uses a hybrid storage approach combining LevelDB for efficient key-value operations and the file system for large objects.</p>
+
+<h2 id="storage-layer-architecture">Storage Layer Architecture</h2>
+
+<pre><code class="language-mermaid">graph TD
+    A[Storage Interface] --&gt; B[LevelDB Store]
+    A --&gt; C[File System Store]
+    B --&gt; D[Commit History]
+    B --&gt; E[Metadata]
+    C --&gt; F[Large Objects]
+    C --&gt; G[Binary Files]
+</code></pre>
+
+<h2 id="leveldb-schema">LevelDB Schema</h2>
+
+<h3 id="key-prefixes-and-structure">Key Prefixes and Structure</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Prefix</th>
+      <th>Purpose</th>
+      <th>Example Key</th>
+      <th>Value Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">commit:</code></td>
+      <td>Commit objects</td>
+      <td><code class="language-plaintext highlighter-rouge">commit:abc123</code></td>
+      <td>JSON</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">object:</code></td>
+      <td>Trees and blobs</td>
+      <td><code class="language-plaintext highlighter-rouge">object:def456</code></td>
+      <td>Buffer/JSON</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">branch:</code></td>
+      <td>Branch references</td>
+      <td><code class="language-plaintext highlighter-rouge">branch:main</code></td>
+      <td>String</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">index</code></td>
+      <td>Staging area</td>
+      <td><code class="language-plaintext highlighter-rouge">index</code></td>
+      <td>JSON</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="data-structures">Data Structures</h3>
+
+<h4 id="1-commit-objects">1. Commit Objects</h4>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="nl">tree</span><span class="p">:</span> <span class="dl">"</span><span class="s2">hash</span><span class="dl">"</span><span class="p">,</span>          <span class="c1">// Root tree hash</span>
+  <span class="nx">parent</span><span class="p">:</span> <span class="dl">"</span><span class="s2">hash</span><span class="dl">"</span><span class="p">,</span>        <span class="c1">// Parent commit hash</span>
+  <span class="nx">author</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span><span class="p">,</span>      <span class="c1">// Author information</span>
+  <span class="nx">timestamp</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span><span class="p">,</span>   <span class="c1">// ISO 8601 date</span>
+  <span class="nx">message</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span><span class="p">,</span>     <span class="c1">// Commit message</span>
+  <span class="nx">signature</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span>    <span class="c1">// Cryptographic signature</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="2-tree-objects">2. Tree Objects</h4>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="nl">entries</span><span class="p">:</span> <span class="p">{</span>
+    <span class="dl">"</span><span class="s2">filename</span><span class="dl">"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">blob|tree</span><span class="dl">"</span><span class="p">,</span>
+      <span class="na">hash</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span><span class="p">,</span>
+      <span class="na">mode</span><span class="p">:</span> <span class="dl">"</span><span class="s2">100644|040000</span><span class="dl">"</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h4 id="3-index-staging-area">3. Index (Staging Area)</h4>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="nl">files</span><span class="p">:</span> <span class="p">{</span>
+    <span class="dl">"</span><span class="s2">path/to/file</span><span class="dl">"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="na">hash</span><span class="p">:</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span><span class="p">,</span>
+      <span class="na">size</span><span class="p">:</span> <span class="nx">number</span><span class="p">,</span>
+      <span class="na">timestamp</span><span class="p">:</span> <span class="nx">number</span><span class="p">,</span>
+      <span class="na">type</span><span class="p">:</span> <span class="dl">"</span><span class="s2">blob</span><span class="dl">"</span><span class="p">,</span>
+      <span class="na">mode</span><span class="p">:</span> <span class="dl">"</span><span class="s2">100644</span><span class="dl">"</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="api-methods">API Methods</h2>
+
+<h3 id="core-storage-operations">Core Storage Operations</h3>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">Storage</span> <span class="p">{</span>
+  <span class="c1">// Initialization</span>
+  <span class="k">async</span> <span class="nf">init</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+  <span class="k">async</span> <span class="nf">close</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+
+  <span class="c1">// Commit Operations</span>
+  <span class="k">async</span> <span class="nf">saveCommit</span><span class="p">(</span><span class="nx">hash</span><span class="p">:</span> <span class="nx">string</span><span class="p">,</span> <span class="nx">data</span><span class="p">:</span> <span class="nx">CommitData</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+  <span class="k">async</span> <span class="nf">getCommit</span><span class="p">(</span><span class="nx">hash</span><span class="p">:</span> <span class="nx">string</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">CommitData</span> <span class="o">|</span> <span class="kc">null</span><span class="o">&gt;</span>
+  <span class="k">async</span> <span class="nf">getCommitHistory</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">string</span><span class="p">[]</span><span class="o">&gt;</span>
+
+  <span class="c1">// Object Operations</span>
+  <span class="k">async</span> <span class="nf">saveObject</span><span class="p">(</span><span class="nx">hash</span><span class="p">:</span> <span class="nx">string</span><span class="p">,</span> <span class="nx">content</span><span class="p">:</span> <span class="nx">any</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+  <span class="k">async</span> <span class="nf">getObject</span><span class="p">(</span><span class="nx">hash</span><span class="p">:</span> <span class="nx">string</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">any</span> <span class="o">|</span> <span class="kc">null</span><span class="o">&gt;</span>
+
+  <span class="c1">// Index Operations</span>
+  <span class="k">async</span> <span class="nf">saveIndex</span><span class="p">(</span><span class="nx">data</span><span class="p">:</span> <span class="nx">IndexData</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="k">void</span><span class="o">&gt;</span>
+  <span class="k">async</span> <span class="nf">getIndex</span><span class="p">():</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">IndexData</span><span class="o">&gt;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="implementation-details">Implementation Details</h2>
+
+<h3 id="1-database-initialization">1. Database Initialization</h3>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nf">constructor</span><span class="p">(</span><span class="nx">repoPath</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">.dgit</span><span class="dl">'</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">dbPath</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="nx">repoPath</span><span class="p">,</span> <span class="dl">'</span><span class="s1">db</span><span class="dl">'</span><span class="p">);</span>
+  <span class="k">this</span><span class="p">.</span><span class="nx">db</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Level</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">dbPath</span><span class="p">,</span> <span class="p">{</span>
+    <span class="na">valueEncoding</span><span class="p">:</span> <span class="dl">'</span><span class="s1">json</span><span class="dl">'</span>
+  <span class="p">});</span>
+<span class="p">}</span>
+
+<span class="k">async</span> <span class="nf">init</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nf">open</span><span class="p">();</span>
+  <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nf">put</span><span class="p">(</span><span class="dl">'</span><span class="s1">metadata</span><span class="dl">'</span><span class="p">,</span> <span class="p">{</span>
+    <span class="na">version</span><span class="p">:</span> <span class="dl">'</span><span class="s1">1.0</span><span class="dl">'</span><span class="p">,</span>
+    <span class="na">created_at</span><span class="p">:</span> <span class="k">new</span> <span class="nc">Date</span><span class="p">().</span><span class="nf">toISOString</span><span class="p">()</span>
+  <span class="p">});</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="2-object-storage-strategy">2. Object Storage Strategy</h3>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">async</span> <span class="nf">saveObject</span><span class="p">(</span><span class="nx">hash</span><span class="p">:</span> <span class="nx">string</span><span class="p">,</span> <span class="nx">content</span><span class="p">:</span> <span class="nx">any</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">key</span> <span class="o">=</span> <span class="s2">`object:</span><span class="p">${</span><span class="nx">hash</span><span class="p">}</span><span class="s2">`</span><span class="p">;</span>
+  <span class="k">if </span><span class="p">(</span><span class="nx">content</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="nx">LARGE_OBJECT_THRESHOLD</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Store large objects in filesystem</span>
+    <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="nf">saveToFS</span><span class="p">(</span><span class="nx">hash</span><span class="p">,</span> <span class="nx">content</span><span class="p">);</span>
+    <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nf">put</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">external</span><span class="dl">'</span> <span class="p">});</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="c1">// Store small objects in LevelDB</span>
+    <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nf">put</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="nx">content</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="3-commit-history-management">3. Commit History Management</h3>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">async</span> <span class="nf">saveCommit</span><span class="p">(</span><span class="nx">hash</span><span class="p">:</span> <span class="nx">string</span><span class="p">,</span> <span class="nx">data</span><span class="p">:</span> <span class="nx">CommitData</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nf">batch</span><span class="p">([</span>
+    <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">put</span><span class="dl">'</span><span class="p">,</span> <span class="na">key</span><span class="p">:</span> <span class="s2">`commit:</span><span class="p">${</span><span class="nx">hash</span><span class="p">}</span><span class="s2">`</span><span class="p">,</span> <span class="na">value</span><span class="p">:</span> <span class="nx">data</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="na">type</span><span class="p">:</span> <span class="dl">'</span><span class="s1">put</span><span class="dl">'</span><span class="p">,</span> <span class="na">key</span><span class="p">:</span> <span class="dl">'</span><span class="s1">head</span><span class="dl">'</span><span class="p">,</span> <span class="na">value</span><span class="p">:</span> <span class="nx">hash</span> <span class="p">}</span>
+  <span class="p">]);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="performance-optimizations">Performance Optimizations</h2>
+
+<h3 id="1-batch-operations">1. Batch Operations</h3>
+
+<ul>
+  <li>Group related operations</li>
+  <li>Atomic transactions</li>
+  <li>Reduced I/O overhead</li>
+</ul>
+
+<h3 id="2-caching-strategy">2. Caching Strategy</h3>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">StorageCache</span> <span class="p">{</span>
+  <span class="kr">private</span> <span class="nx">cache</span><span class="p">:</span> <span class="nb">Map</span><span class="o">&lt;</span><span class="nx">string</span><span class="p">,</span> <span class="nx">any</span><span class="o">&gt;</span><span class="p">;</span>
+  <span class="kr">private</span> <span class="nx">maxSize</span><span class="p">:</span> <span class="nx">number</span><span class="p">;</span>
+
+  <span class="k">async</span> <span class="nf">get</span><span class="p">(</span><span class="nx">key</span><span class="p">:</span> <span class="nx">string</span><span class="p">):</span> <span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">any</span><span class="o">&gt;</span> <span class="p">{</span>
+    <span class="k">if </span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">cache</span><span class="p">.</span><span class="nf">has</span><span class="p">(</span><span class="nx">key</span><span class="p">))</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">cache</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="nx">key</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="kd">const</span> <span class="nx">value</span> <span class="o">=</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="nx">key</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">cache</span><span class="p">.</span><span class="nf">set</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="nx">value</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">value</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="3-large-object-handling">3. Large Object Handling</h3>
+
+<ul>
+  <li>Threshold-based storage selection</li>
+  <li>Streaming for large files</li>
+  <li>Compression for text content</li>
+</ul>
+
+<h2 id="error-handling">Error Handling</h2>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">async</span> <span class="nf">getObject</span><span class="p">(</span><span class="nx">hash</span><span class="p">:</span> <span class="nx">string</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">try</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">value</span> <span class="o">=</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="nx">db</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="s2">`object:</span><span class="p">${</span><span class="nx">hash</span><span class="p">}</span><span class="s2">`</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nx">value</span><span class="p">.</span><span class="nx">type</span> <span class="o">===</span> <span class="dl">'</span><span class="s1">external</span><span class="dl">'</span>
+      <span class="p">?</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="nf">getFromFS</span><span class="p">(</span><span class="nx">hash</span><span class="p">)</span>
+      <span class="p">:</span> <span class="nx">value</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">catch </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if </span><span class="p">(</span><span class="nx">error</span><span class="p">.</span><span class="nx">code</span> <span class="o">===</span> <span class="dl">'</span><span class="s1">LEVEL_NOT_FOUND</span><span class="dl">'</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="kc">null</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nc">Error</span><span class="p">(</span><span class="s2">`Storage error: </span><span class="p">${</span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">}</span><span class="s2">`</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="next-steps">Next Steps</h2>
+
+<ul>
+  <li>Review <a href="../api-reference">API Reference</a></li>
+  <li>See <a href="../workflows">Example Workflows</a></li>
+  <li>Check <a href="../troubleshooting">Troubleshooting</a></li>
+</ul>

@@ -1,0 +1,12 @@
+{% if page.has_children == true %}
+<hr />
+<h2 class="text-delta">Table of contents</h2>
+<ul>
+  {% for child in page.children_list %}
+  <li>
+    <a href="{{ child.url | relative_url }}">{{ child.title }}</a>
+    {% if child.summary %} - {{ child.summary }} {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

@@ -1,0 +1,702 @@
+{"0": {
+    "doc": "API Reference",
+    "title": "Core API",
+    "content": " ",
+    "url": "/dgit/api-reference.html#core-api",
+    
+    "relUrl": "/api-reference.html#core-api"
+  },"1": {
+    "doc": "API Reference",
+    "title": "Repository Operations",
+    "content": "initRepo() . Initializes a new dGit repository in the current directory. async function initRepo(): Promise&lt;void&gt;; . Example: . import { initRepo } from \"dgit/core\"; await initRepo(); // Creates .dgit directory with initial structure . addFiles(files: string[]) . Stages files for commit. async function addFiles(files: string[]): Promise&lt;void&gt;; . Parameters: . | files: Array of file paths to stage | . Example: . import { addFiles } from \"dgit/core\"; // Add single file await addFiles([\"file.txt\"]); // Add multiple files await addFiles([\"file1.txt\", \"file2.txt\"]); // Add with glob pattern await addFiles([\"src/*.js\"]); . createCommit(options) . Creates a new commit with staged changes. interface CommitOptions { message: string; } async function createCommit(options: CommitOptions): Promise&lt;string&gt;; . Parameters: . | options.message: Commit message | . Returns: . | Commit hash | . Example: . import { createCommit } from \"dgit/core\"; const hash = await createCommit({ message: \"Initial commit\", }); console.log(`Created commit: ${hash}`); . ",
+    "url": "/dgit/api-reference.html#repository-operations",
+    
+    "relUrl": "/api-reference.html#repository-operations"
+  },"2": {
+    "doc": "API Reference",
+    "title": "Storage API",
+    "content": " ",
+    "url": "/dgit/api-reference.html#storage-api",
+    
+    "relUrl": "/api-reference.html#storage-api"
+  },"3": {
+    "doc": "API Reference",
+    "title": "Class: Storage",
+    "content": "Constructor . constructor(repoPath?: string) . Parameters: . | repoPath: Optional repository path (defaults to ‘.dgit’) | . Methods . init() . Initializes the storage database. async init(): Promise&lt;void&gt; . saveCommit(hash, data) . Stores a commit object. interface CommitData { tree: string; parent: string | null; author: string; timestamp: string; message: string; signature: string; } async saveCommit(hash: string, data: CommitData): Promise&lt;void&gt; . getCommit(hash) . Retrieves a commit object. async getCommit(hash: string): Promise&lt;CommitData | null&gt; . getCommitHistory() . Gets the ordered list of commit hashes. async getCommitHistory(): Promise&lt;string[]&gt; . saveObject(hash, content) . Stores a blob or tree object. async saveObject(hash: string, content: any): Promise&lt;void&gt; . getObject(hash) . Retrieves an object by hash. async getObject(hash: string): Promise&lt;any | null&gt; . saveIndex(data) . Updates the staging area. interface IndexData { files: { [path: string]: { hash: string; size: number; timestamp: number; type: string; mode: string; } } } async saveIndex(data: IndexData): Promise&lt;void&gt; . getIndex() . Gets the current staging area state. async getIndex(): Promise&lt;IndexData&gt; . ",
+    "url": "/dgit/api-reference.html#class-storage",
+    
+    "relUrl": "/api-reference.html#class-storage"
+  },"4": {
+    "doc": "API Reference",
+    "title": "Usage Examples",
+    "content": " ",
+    "url": "/dgit/api-reference.html#usage-examples",
+    
+    "relUrl": "/api-reference.html#usage-examples"
+  },"5": {
+    "doc": "API Reference",
+    "title": "Basic Repository Operations",
+    "content": "import { initRepo, addFiles, createCommit } from \"dgit/core\"; // Initialize repository await initRepo(); // Stage files await addFiles([\"README.md\", \"src/*.js\"]); // Create commit const hash = await createCommit({ message: \"Initial commit\", }); . ",
+    "url": "/dgit/api-reference.html#basic-repository-operations",
+    
+    "relUrl": "/api-reference.html#basic-repository-operations"
+  },"6": {
+    "doc": "API Reference",
+    "title": "Working with Storage Directly",
+    "content": "import { getStorage } from \"dgit/storage\"; const storage = getStorage(); await storage.init(); // Save a blob const content = \"Hello, World!\"; const hash = computeHash(content); await storage.saveObject(hash, content); // Retrieve commit history const history = await storage.getCommitHistory(); for (const commitHash of history) { const commit = await storage.getCommit(commitHash); console.log(`${commitHash}: ${commit.message}`); } . ",
+    "url": "/dgit/api-reference.html#working-with-storage-directly",
+    
+    "relUrl": "/api-reference.html#working-with-storage-directly"
+  },"7": {
+    "doc": "API Reference",
+    "title": "Error Handling",
+    "content": "All API methods may throw errors that should be handled: . try { await addFiles([\"nonexistent.txt\"]); } catch (error) { console.error(\"Failed to add files:\", error.message); } . Common error types: . | RepositoryError: Repository-related issues | StorageError: Database or filesystem errors | ValidationError: Invalid input parameters | . ",
+    "url": "/dgit/api-reference.html#error-handling",
+    
+    "relUrl": "/api-reference.html#error-handling"
+  },"8": {
+    "doc": "API Reference",
+    "title": "Type Definitions",
+    "content": "For TypeScript users, type definitions are available: . import { CommitOptions, CommitData, IndexData } from \"dgit/types\"; . ",
+    "url": "/dgit/api-reference.html#type-definitions",
+    
+    "relUrl": "/api-reference.html#type-definitions"
+  },"9": {
+    "doc": "API Reference",
+    "title": "Next Steps",
+    "content": ". | See Example Workflows | Check Troubleshooting | Review Architecture | . ",
+    "url": "/dgit/api-reference.html#next-steps",
+    
+    "relUrl": "/api-reference.html#next-steps"
+  },"10": {
+    "doc": "API Reference",
+    "title": "API Reference",
+    "content": " ",
+    "url": "/dgit/api-reference.html",
+    
+    "relUrl": "/api-reference.html"
+  },"11": {
+    "doc": "Getting Started with dGit",
+    "title": "Installation",
+    "content": " ",
+    "url": "/dgit/getting-started.html#installation",
+    
+    "relUrl": "/getting-started.html#installation"
+  },"12": {
+    "doc": "Getting Started with dGit",
+    "title": "Prerequisites",
+    "content": ". | Node.js (v14 or higher) | npm (v6 or higher) | . ",
+    "url": "/dgit/getting-started.html#prerequisites",
+    
+    "relUrl": "/getting-started.html#prerequisites"
+  },"13": {
+    "doc": "Getting Started with dGit",
+    "title": "Install from npm",
+    "content": "npm install -g dgit . # Clone a repository git clone https://github.com/yourusername/dgit.git # Navigate to directory cd dgit # Install dependencies npm install # Link globally npm link . ",
+    "url": "/dgit/getting-started.html#install-from-npm",
+    
+    "relUrl": "/getting-started.html#install-from-npm"
+  },"14": {
+    "doc": "Getting Started with dGit",
+    "title": "Basic Usage",
+    "content": " ",
+    "url": "/dgit/getting-started.html#basic-usage",
+    
+    "relUrl": "/getting-started.html#basic-usage"
+  },"15": {
+    "doc": "Getting Started with dGit",
+    "title": "Initialize a Repository",
+    "content": "Create a new dGit repository in your project directory: . # Create a new directory mkdir my-project # Navigate to the directory cd my-project # Initialize the repository dgit init . This creates a .dgit directory with the necessary repository structure. ",
+    "url": "/dgit/getting-started.html#initialize-a-repository",
+    
+    "relUrl": "/getting-started.html#initialize-a-repository"
+  },"16": {
+    "doc": "Getting Started with dGit",
+    "title": "Adding Files",
+    "content": "Stage files for commit: . # Add specific files dgit add file.txt # Add multiple files dgit add file1.txt file2.txt # Add all files dgit add . # Add using patterns dgit add '*.js' . ",
+    "url": "/dgit/getting-started.html#adding-files",
+    
+    "relUrl": "/getting-started.html#adding-files"
+  },"17": {
+    "doc": "Getting Started with dGit",
+    "title": "Creating Commits",
+    "content": "Create a new commit with your staged changes: . # Create a commit with a message dgit commit -m \"Initial commit\" # Create a commit with a message and author dgit commit -m \"Initial commit\" -a \"John Doe &lt;john@example.com&gt;\" . ",
+    "url": "/dgit/getting-started.html#creating-commits",
+    
+    "relUrl": "/getting-started.html#creating-commits"
+  },"18": {
+    "doc": "Getting Started with dGit",
+    "title": "Repository Structure",
+    "content": "After initialization, your .dgit directory contains: .dgit/ ├── objects/ # Stores all content ├── refs/ # Branch references ├── HEAD # Points to current branch ├── index # Staging area ├── keys/ # Cryptographic keys └── db/ # LevelDB database . ",
+    "url": "/dgit/getting-started.html#repository-structure",
+    
+    "relUrl": "/getting-started.html#repository-structure"
+  },"19": {
+    "doc": "Getting Started with dGit",
+    "title": "Next Steps",
+    "content": ". | Learn about the Architecture | Explore the API Reference | Check Troubleshooting for common issues | . ",
+    "url": "/dgit/getting-started.html#next-steps",
+    
+    "relUrl": "/getting-started.html#next-steps"
+  },"20": {
+    "doc": "Getting Started with dGit",
+    "title": "Common Issues",
+    "content": " ",
+    "url": "/dgit/getting-started.html#common-issues",
+    
+    "relUrl": "/getting-started.html#common-issues"
+  },"21": {
+    "doc": "Getting Started with dGit",
+    "title": "Command Not Found",
+    "content": "If the dgit command isn’t found after installation: . # Reinstall globally npm uninstall -g dgit npm install -g dgit # Or update PATH if installed from source export PATH=\"$PATH:$(npm bin -g)\" . ",
+    "url": "/dgit/getting-started.html#command-not-found",
+    
+    "relUrl": "/getting-started.html#command-not-found"
+  },"22": {
+    "doc": "Getting Started with dGit",
+    "title": "Permission Issues",
+    "content": "If you encounter permission errors: . # Install with sudo sudo npm install -g dgit # Or fix npm permissions sudo chown -R $USER:$GROUP ~/.npm sudo chown -R $USER:$GROUP ~/.config . ",
+    "url": "/dgit/getting-started.html#permission-issues",
+    
+    "relUrl": "/getting-started.html#permission-issues"
+  },"23": {
+    "doc": "Getting Started with dGit",
+    "title": "Getting Started with dGit",
+    "content": "This guide will help you install dGit and start using its basic features. ",
+    "url": "/dgit/getting-started.html",
+    
+    "relUrl": "/getting-started.html"
+  },"24": {
+    "doc": "dGit Architecture",
+    "title": "System Overview",
+    "content": "dGit is built with a layered architecture that separates concerns and promotes modularity. graph TD A[CLI Layer] --&gt; B[Core Layer] B --&gt; C[Storage Layer] C --&gt; D[LevelDB] C --&gt; E[File System] style A fill:#f9f,stroke:#333 style B fill:#bbf,stroke:#333 style C fill:#dfd,stroke:#333 . ",
+    "url": "/dgit/architecture/#system-overview",
+    
+    "relUrl": "/architecture/#system-overview"
+  },"25": {
+    "doc": "dGit Architecture",
+    "title": "Core Components",
+    "content": " ",
+    "url": "/dgit/architecture/#core-components",
+    
+    "relUrl": "/architecture/#core-components"
+  },"26": {
+    "doc": "dGit Architecture",
+    "title": "1. CLI Layer",
+    "content": ". | Purpose: Handles user interaction and command parsing | Location: src/cli/ | Key Components: . | Command parser | User input validation | Output formatting | . | . ",
+    "url": "/dgit/architecture/#1-cli-layer",
+    
+    "relUrl": "/architecture/#1-cli-layer"
+  },"27": {
+    "doc": "dGit Architecture",
+    "title": "2. Core Layer",
+    "content": ". | Purpose: Implements core version control logic | Location: src/core/ | Key Components: . | Repository initialization (init.js) | File staging (add.js) | Commit creation (commit.js) | Object model implementation | . | . ",
+    "url": "/dgit/architecture/#2-core-layer",
+    
+    "relUrl": "/architecture/#2-core-layer"
+  },"28": {
+    "doc": "dGit Architecture",
+    "title": "3. Storage Layer",
+    "content": ". | Purpose: Manages data persistence | Location: src/storage/ | Key Components: . | LevelDB integration | Object storage | Index management | . | . ",
+    "url": "/dgit/architecture/#3-storage-layer",
+    
+    "relUrl": "/architecture/#3-storage-layer"
+  },"29": {
+    "doc": "dGit Architecture",
+    "title": "Data Model",
+    "content": " ",
+    "url": "/dgit/architecture/#data-model",
+    
+    "relUrl": "/architecture/#data-model"
+  },"30": {
+    "doc": "dGit Architecture",
+    "title": "Objects",
+    "content": "dGit uses three types of objects: . | Blobs . | Store file contents | Content-addressable by SHA-1 hash | . { type: 'blob', content: Buffer } . | Trees . | Represent directories | Contains references to blobs and other trees | . { type: 'tree', entries: { 'filename': { type: 'blob', hash: 'sha1' }, 'dirname': { type: 'tree', hash: 'sha1' } } } . | Commits . | Represent snapshots | Include metadata and cryptographic signatures { type: 'commit', tree: 'sha1', parent: 'sha1', author: 'string', message: 'string', timestamp: 'ISO string', signature: 'string' } . | . | . ",
+    "url": "/dgit/architecture/#objects",
+    
+    "relUrl": "/architecture/#objects"
+  },"31": {
+    "doc": "dGit Architecture",
+    "title": "Data Flow",
+    "content": " ",
+    "url": "/dgit/architecture/#data-flow",
+    
+    "relUrl": "/architecture/#data-flow"
+  },"32": {
+    "doc": "dGit Architecture",
+    "title": "Adding Files",
+    "content": "sequenceDiagram participant User participant CLI participant Core participant Storage User-&gt;&gt;CLI: dgit add file.txt CLI-&gt;&gt;Core: addFiles(['file.txt']) Core-&gt;&gt;Storage: createBlob(content) Storage--&gt;&gt;Core: blobHash Core-&gt;&gt;Storage: updateIndex(fileInfo) Storage--&gt;&gt;Core: success Core--&gt;&gt;CLI: success CLI--&gt;&gt;User: \"Added file.txt\" . ",
+    "url": "/dgit/architecture/#adding-files",
+    
+    "relUrl": "/architecture/#adding-files"
+  },"33": {
+    "doc": "dGit Architecture",
+    "title": "Creating Commits",
+    "content": "sequenceDiagram participant User participant Core participant Storage participant Crypto User-&gt;&gt;Core: createCommit(message) Core-&gt;&gt;Storage: getIndex() Storage--&gt;&gt;Core: stagedFiles Core-&gt;&gt;Core: buildTree() Core-&gt;&gt;Crypto: signCommit() Core-&gt;&gt;Storage: saveCommit() Storage--&gt;&gt;Core: commitHash Core--&gt;&gt;User: \"Created commit [hash]\" . ",
+    "url": "/dgit/architecture/#creating-commits",
+    
+    "relUrl": "/architecture/#creating-commits"
+  },"34": {
+    "doc": "dGit Architecture",
+    "title": "Security",
+    "content": " ",
+    "url": "/dgit/architecture/#security",
+    
+    "relUrl": "/architecture/#security"
+  },"35": {
+    "doc": "dGit Architecture",
+    "title": "Cryptographic Verification",
+    "content": ". | RSA key pair generation on init | Commit signing with private key | Verification with public key | SHA-1 hashing for content addressing | . ",
+    "url": "/dgit/architecture/#cryptographic-verification",
+    
+    "relUrl": "/architecture/#cryptographic-verification"
+  },"36": {
+    "doc": "dGit Architecture",
+    "title": "Performance Considerations",
+    "content": " ",
+    "url": "/dgit/architecture/#performance-considerations",
+    
+    "relUrl": "/architecture/#performance-considerations"
+  },"37": {
+    "doc": "dGit Architecture",
+    "title": "Storage Optimization",
+    "content": ". | Content-addressable storage prevents duplication | LevelDB for efficient key-value operations | Lazy loading of objects | Batch operations for better performance | . ",
+    "url": "/dgit/architecture/#storage-optimization",
+    
+    "relUrl": "/architecture/#storage-optimization"
+  },"38": {
+    "doc": "dGit Architecture",
+    "title": "Next Steps",
+    "content": ". | Learn about the Storage Implementation | View the API Reference | Check Example Workflows | . ",
+    "url": "/dgit/architecture/#next-steps",
+    
+    "relUrl": "/architecture/#next-steps"
+  },"39": {
+    "doc": "dGit Architecture",
+    "title": "dGit Architecture",
+    "content": " ",
+    "url": "/dgit/architecture/",
+    
+    "relUrl": "/architecture/"
+  },"40": {
+    "doc": "Home",
+    "title": "What is dGit?",
+    "content": "dGit is a distributed version control system that combines Git’s proven concepts with modern JavaScript implementation. It features: . | 📦 Decentralized Storage: Built for distributed systems | 🔐 Cryptographic Verification: Secure commit signing | 💻 Local-First: Operates without network dependency | 🚀 Modern Architecture: Built with current JavaScript practices | . ",
+    "url": "/dgit/#what-is-dgit",
+    
+    "relUrl": "/#what-is-dgit"
+  },"41": {
+    "doc": "Home",
+    "title": "Quick Start",
+    "content": "# Install dGit npm install -g dgit # Initialize a repository dgit init # Add files dgit add . # Create a commit dgit commit -m \"Initial commit\" . ",
+    "url": "/dgit/#quick-start",
+    
+    "relUrl": "/#quick-start"
+  },"42": {
+    "doc": "Home",
+    "title": "Features",
+    "content": ". | File Tracking: Track changes to your files with efficient storage | Commit History: Maintain a complete history of your project | Cryptographic Signing: Every commit is cryptographically signed | Local Storage: Uses LevelDB for efficient local storage | Modern CLI: Intuitive command-line interface | . ",
+    "url": "/dgit/#features",
+    
+    "relUrl": "/#features"
+  },"43": {
+    "doc": "Home",
+    "title": "Project Status",
+    "content": "dGit is currently in active development. Core features implemented: . | ✅ Repository initialization | ✅ File staging | ✅ Commit creation | ✅ Cryptographic verification | ✅ Local storage with LevelDB | . ",
+    "url": "/dgit/#project-status",
+    
+    "relUrl": "/#project-status"
+  },"44": {
+    "doc": "Home",
+    "title": "Documentation Sections",
+    "content": ". | Getting Started - Quick setup guide | Architecture - System design and components | API Reference - Detailed API documentation | Troubleshooting - Common issues and solutions | . ",
+    "url": "/dgit/#documentation-sections",
+    
+    "relUrl": "/#documentation-sections"
+  },"45": {
+    "doc": "Home",
+    "title": "Home",
+    "content": "A modern, decentralized version control system built with JavaScript. Get Started View on GitHub . ",
+    "url": "/dgit/",
+    
+    "relUrl": "/"
+  },"46": {
+    "doc": "Storage Implementation",
+    "title": "Overview",
+    "content": "dGit uses a hybrid storage approach combining LevelDB for efficient key-value operations and the file system for large objects. ",
+    "url": "/dgit/architecture/storage.html#overview",
+    
+    "relUrl": "/architecture/storage.html#overview"
+  },"47": {
+    "doc": "Storage Implementation",
+    "title": "Storage Layer Architecture",
+    "content": "graph TD A[Storage Interface] --&gt; B[LevelDB Store] A --&gt; C[File System Store] B --&gt; D[Commit History] B --&gt; E[Metadata] C --&gt; F[Large Objects] C --&gt; G[Binary Files] . ",
+    "url": "/dgit/architecture/storage.html#storage-layer-architecture",
+    
+    "relUrl": "/architecture/storage.html#storage-layer-architecture"
+  },"48": {
+    "doc": "Storage Implementation",
+    "title": "LevelDB Schema",
+    "content": " ",
+    "url": "/dgit/architecture/storage.html#leveldb-schema",
+    
+    "relUrl": "/architecture/storage.html#leveldb-schema"
+  },"49": {
+    "doc": "Storage Implementation",
+    "title": "Key Prefixes and Structure",
+    "content": "| Prefix | Purpose | Example Key | Value Type | . | commit: | Commit objects | commit:abc123 | JSON | . | object: | Trees and blobs | object:def456 | Buffer/JSON | . | branch: | Branch references | branch:main | String | . | index | Staging area | index | JSON | . ",
+    "url": "/dgit/architecture/storage.html#key-prefixes-and-structure",
+    
+    "relUrl": "/architecture/storage.html#key-prefixes-and-structure"
+  },"50": {
+    "doc": "Storage Implementation",
+    "title": "Data Structures",
+    "content": "1. Commit Objects . { tree: \"hash\", // Root tree hash parent: \"hash\", // Parent commit hash author: \"string\", // Author information timestamp: \"string\", // ISO 8601 date message: \"string\", // Commit message signature: \"string\" // Cryptographic signature } . 2. Tree Objects . { entries: { \"filename\": { type: \"blob|tree\", hash: \"string\", mode: \"100644|040000\" } } } . 3. Index (Staging Area) . { files: { \"path/to/file\": { hash: \"string\", size: number, timestamp: number, type: \"blob\", mode: \"100644\" } } } . ",
+    "url": "/dgit/architecture/storage.html#data-structures",
+    
+    "relUrl": "/architecture/storage.html#data-structures"
+  },"51": {
+    "doc": "Storage Implementation",
+    "title": "API Methods",
+    "content": " ",
+    "url": "/dgit/architecture/storage.html#api-methods",
+    
+    "relUrl": "/architecture/storage.html#api-methods"
+  },"52": {
+    "doc": "Storage Implementation",
+    "title": "Core Storage Operations",
+    "content": "class Storage { // Initialization async init(): Promise&lt;void&gt; async close(): Promise&lt;void&gt; // Commit Operations async saveCommit(hash: string, data: CommitData): Promise&lt;void&gt; async getCommit(hash: string): Promise&lt;CommitData | null&gt; async getCommitHistory(): Promise&lt;string[]&gt; // Object Operations async saveObject(hash: string, content: any): Promise&lt;void&gt; async getObject(hash: string): Promise&lt;any | null&gt; // Index Operations async saveIndex(data: IndexData): Promise&lt;void&gt; async getIndex(): Promise&lt;IndexData&gt; } . ",
+    "url": "/dgit/architecture/storage.html#core-storage-operations",
+    
+    "relUrl": "/architecture/storage.html#core-storage-operations"
+  },"53": {
+    "doc": "Storage Implementation",
+    "title": "Implementation Details",
+    "content": " ",
+    "url": "/dgit/architecture/storage.html#implementation-details",
+    
+    "relUrl": "/architecture/storage.html#implementation-details"
+  },"54": {
+    "doc": "Storage Implementation",
+    "title": "1. Database Initialization",
+    "content": "constructor(repoPath = '.dgit') { this.dbPath = path.join(repoPath, 'db'); this.db = new Level(this.dbPath, { valueEncoding: 'json' }); } async init() { await this.db.open(); await this.db.put('metadata', { version: '1.0', created_at: new Date().toISOString() }); } . ",
+    "url": "/dgit/architecture/storage.html#1-database-initialization",
+    
+    "relUrl": "/architecture/storage.html#1-database-initialization"
+  },"55": {
+    "doc": "Storage Implementation",
+    "title": "2. Object Storage Strategy",
+    "content": "async saveObject(hash: string, content: any) { const key = `object:${hash}`; if (content.length &gt; LARGE_OBJECT_THRESHOLD) { // Store large objects in filesystem await this.saveToFS(hash, content); await this.db.put(key, { type: 'external' }); } else { // Store small objects in LevelDB await this.db.put(key, content); } } . ",
+    "url": "/dgit/architecture/storage.html#2-object-storage-strategy",
+    
+    "relUrl": "/architecture/storage.html#2-object-storage-strategy"
+  },"56": {
+    "doc": "Storage Implementation",
+    "title": "3. Commit History Management",
+    "content": "async saveCommit(hash: string, data: CommitData) { await this.db.batch([ { type: 'put', key: `commit:${hash}`, value: data }, { type: 'put', key: 'head', value: hash } ]); } . ",
+    "url": "/dgit/architecture/storage.html#3-commit-history-management",
+    
+    "relUrl": "/architecture/storage.html#3-commit-history-management"
+  },"57": {
+    "doc": "Storage Implementation",
+    "title": "Performance Optimizations",
+    "content": " ",
+    "url": "/dgit/architecture/storage.html#performance-optimizations",
+    
+    "relUrl": "/architecture/storage.html#performance-optimizations"
+  },"58": {
+    "doc": "Storage Implementation",
+    "title": "1. Batch Operations",
+    "content": ". | Group related operations | Atomic transactions | Reduced I/O overhead | . ",
+    "url": "/dgit/architecture/storage.html#1-batch-operations",
+    
+    "relUrl": "/architecture/storage.html#1-batch-operations"
+  },"59": {
+    "doc": "Storage Implementation",
+    "title": "2. Caching Strategy",
+    "content": "class StorageCache { private cache: Map&lt;string, any&gt;; private maxSize: number; async get(key: string): Promise&lt;any&gt; { if (this.cache.has(key)) { return this.cache.get(key); } const value = await this.db.get(key); this.cache.set(key, value); return value; } } . ",
+    "url": "/dgit/architecture/storage.html#2-caching-strategy",
+    
+    "relUrl": "/architecture/storage.html#2-caching-strategy"
+  },"60": {
+    "doc": "Storage Implementation",
+    "title": "3. Large Object Handling",
+    "content": ". | Threshold-based storage selection | Streaming for large files | Compression for text content | . ",
+    "url": "/dgit/architecture/storage.html#3-large-object-handling",
+    
+    "relUrl": "/architecture/storage.html#3-large-object-handling"
+  },"61": {
+    "doc": "Storage Implementation",
+    "title": "Error Handling",
+    "content": "async getObject(hash: string) { try { const value = await this.db.get(`object:${hash}`); return value.type === 'external' ? await this.getFromFS(hash) : value; } catch (error) { if (error.code === 'LEVEL_NOT_FOUND') { return null; } throw new Error(`Storage error: ${error.message}`); } } . ",
+    "url": "/dgit/architecture/storage.html#error-handling",
+    
+    "relUrl": "/architecture/storage.html#error-handling"
+  },"62": {
+    "doc": "Storage Implementation",
+    "title": "Next Steps",
+    "content": ". | Review API Reference | See Example Workflows | Check Troubleshooting | . ",
+    "url": "/dgit/architecture/storage.html#next-steps",
+    
+    "relUrl": "/architecture/storage.html#next-steps"
+  },"63": {
+    "doc": "Storage Implementation",
+    "title": "Storage Implementation",
+    "content": " ",
+    "url": "/dgit/architecture/storage.html",
+    
+    "relUrl": "/architecture/storage.html"
+  },"64": {
+    "doc": "Troubleshooting Guide",
+    "title": "Installation Issues",
+    "content": " ",
+    "url": "/dgit/troubleshooting.html#installation-issues",
+    
+    "relUrl": "/troubleshooting.html#installation-issues"
+  },"65": {
+    "doc": "Troubleshooting Guide",
+    "title": "Command Not Found",
+    "content": "Problem: . -bash: dgit: command not found . Solution: . | Reinstall globally | . npm uninstall -g dgit npm install -g dgit # Or update PATH if installed from source export PATH=\"$PATH:$(npm bin -g)\" . | Check npm global path: | . npm config get prefix # Add to PATH if needed export PATH=\"$PATH:$(npm config get prefix)/bin\" . ",
+    "url": "/dgit/troubleshooting.html#command-not-found",
+    
+    "relUrl": "/troubleshooting.html#command-not-found"
+  },"66": {
+    "doc": "Troubleshooting Guide",
+    "title": "Permission Errors",
+    "content": "Problem: . npm ERR! Error: EACCES: permission denied . Solutions: . | Use sudo (not recommended): | . sudo npm install -g dgit . | Fix npm permissions (recommended): | . sudo chown -R $USER:$GROUP ~/.npm sudo chown -R $USER:$GROUP ~/.config . ",
+    "url": "/dgit/troubleshooting.html#permission-errors",
+    
+    "relUrl": "/troubleshooting.html#permission-errors"
+  },"67": {
+    "doc": "Troubleshooting Guide",
+    "title": "Repository Issues",
+    "content": " ",
+    "url": "/dgit/troubleshooting.html#repository-issues",
+    
+    "relUrl": "/troubleshooting.html#repository-issues"
+  },"68": {
+    "doc": "Troubleshooting Guide",
+    "title": "Invalid Repository",
+    "content": "Problem: . Error: not a dgit repository . Solutions: . | Check current directory: | . ls -la .dgit . | Initialize repository if needed: | . dgit init . | Verify repository structure: | . tree .dgit . ",
+    "url": "/dgit/troubleshooting.html#invalid-repository",
+    
+    "relUrl": "/troubleshooting.html#invalid-repository"
+  },"69": {
+    "doc": "Troubleshooting Guide",
+    "title": "Corrupt Repository",
+    "content": "Problem: . Error: corrupt repository structure . Solutions: . | Check repository integrity: | . # Verify database ls -la .dgit/db # Check objects ls -la .dgit/objects . | Reinitialize if necessary: | . mv .dgit .dgit_backup dgit init . ",
+    "url": "/dgit/troubleshooting.html#corrupt-repository",
+    
+    "relUrl": "/troubleshooting.html#corrupt-repository"
+  },"70": {
+    "doc": "Troubleshooting Guide",
+    "title": "Storage Issues",
+    "content": " ",
+    "url": "/dgit/troubleshooting.html#storage-issues",
+    
+    "relUrl": "/troubleshooting.html#storage-issues"
+  },"71": {
+    "doc": "Troubleshooting Guide",
+    "title": "Database Errors",
+    "content": "Problem: . Error: Failed to access LevelDB database . Solutions: . | Check database lock: | . rm .dgit/db/LOCK . | Verify permissions: | . ls -la .dgit/db chmod -R 755 .dgit/db . | Rebuild database: | . # Backup first cp -r .dgit/db .dgit/db_backup rm -rf .dgit/db/* dgit init . ",
+    "url": "/dgit/troubleshooting.html#database-errors",
+    
+    "relUrl": "/troubleshooting.html#database-errors"
+  },"72": {
+    "doc": "Troubleshooting Guide",
+    "title": "Disk Space Issues",
+    "content": "Problem: . Error: no space left on device . Solutions: . | Check available space: | . df -h . | Clean unnecessary objects: | . # Coming in future version dgit gc . ",
+    "url": "/dgit/troubleshooting.html#disk-space-issues",
+    
+    "relUrl": "/troubleshooting.html#disk-space-issues"
+  },"73": {
+    "doc": "Troubleshooting Guide",
+    "title": "Commit Issues",
+    "content": " ",
+    "url": "/dgit/troubleshooting.html#commit-issues",
+    
+    "relUrl": "/troubleshooting.html#commit-issues"
+  },"74": {
+    "doc": "Troubleshooting Guide",
+    "title": "Staging Failures",
+    "content": "Problem: . Error: Failed to stage files . Solutions: . | Check file existence: | . ls -la &lt;file&gt; . | Verify file permissions: | . chmod 644 &lt;file&gt; . | Check index state: | . cat .dgit/index . ",
+    "url": "/dgit/troubleshooting.html#staging-failures",
+    
+    "relUrl": "/troubleshooting.html#staging-failures"
+  },"75": {
+    "doc": "Troubleshooting Guide",
+    "title": "Commit Failures",
+    "content": "Problem: . Error: Failed to create commit . Solutions: . | Verify staged changes: | . # Future version dgit status . | Check signing keys: | . ls -la .dgit/keys . | Regenerate keys if needed: | . rm .dgit/keys/* dgit init . ",
+    "url": "/dgit/troubleshooting.html#commit-failures",
+    
+    "relUrl": "/troubleshooting.html#commit-failures"
+  },"76": {
+    "doc": "Troubleshooting Guide",
+    "title": "Performance Issues",
+    "content": " ",
+    "url": "/dgit/troubleshooting.html#performance-issues",
+    
+    "relUrl": "/troubleshooting.html#performance-issues"
+  },"77": {
+    "doc": "Troubleshooting Guide",
+    "title": "Slow Operations",
+    "content": "Problem: Commands taking too long to execute . Solutions: . | Check repository size: | . du -sh .dgit . | Monitor system resources: | . top df -h . | Optimize storage: | . # Coming in future version dgit optimize . ",
+    "url": "/dgit/troubleshooting.html#slow-operations",
+    
+    "relUrl": "/troubleshooting.html#slow-operations"
+  },"78": {
+    "doc": "Troubleshooting Guide",
+    "title": "Debugging",
+    "content": " ",
+    "url": "/dgit/troubleshooting.html#debugging",
+    
+    "relUrl": "/troubleshooting.html#debugging"
+  },"79": {
+    "doc": "Troubleshooting Guide",
+    "title": "Enable Debug Logging",
+    "content": "# Set debug environment variable export DEBUG=dgit:* # Run command with debug output dgit &lt;command&gt; . ",
+    "url": "/dgit/troubleshooting.html#enable-debug-logging",
+    
+    "relUrl": "/troubleshooting.html#enable-debug-logging"
+  },"80": {
+    "doc": "Troubleshooting Guide",
+    "title": "Check System Information",
+    "content": "# Node.js version node --version # npm version npm --version # dGit version dgit --version . ",
+    "url": "/dgit/troubleshooting.html#check-system-information",
+    
+    "relUrl": "/troubleshooting.html#check-system-information"
+  },"81": {
+    "doc": "Troubleshooting Guide",
+    "title": "Generate Debug Report",
+    "content": "# Coming in future version dgit debug-report . ",
+    "url": "/dgit/troubleshooting.html#generate-debug-report",
+    
+    "relUrl": "/troubleshooting.html#generate-debug-report"
+  },"82": {
+    "doc": "Troubleshooting Guide",
+    "title": "Common Error Messages",
+    "content": "| Error Code | Message | Solution | . | E001 | Repository not found | Run dgit init | . | E002 | Invalid object hash | Check file integrity | . | E003 | Database access error | Check permissions | . | E004 | Commit signing failed | Verify keys | . | E005 | Storage full | Free disk space | . ",
+    "url": "/dgit/troubleshooting.html#common-error-messages",
+    
+    "relUrl": "/troubleshooting.html#common-error-messages"
+  },"83": {
+    "doc": "Troubleshooting Guide",
+    "title": "Getting Help",
+    "content": "If you’re still experiencing issues: . | Check the GitHub Issues | Search existing problems | Create a new issue with: . | Error message | Steps to reproduce | System information | Debug logs | . | . ",
+    "url": "/dgit/troubleshooting.html#getting-help",
+    
+    "relUrl": "/troubleshooting.html#getting-help"
+  },"84": {
+    "doc": "Troubleshooting Guide",
+    "title": "Next Steps",
+    "content": ". | Review Architecture | Check API Reference | See Example Workflows | . ",
+    "url": "/dgit/troubleshooting.html#next-steps",
+    
+    "relUrl": "/troubleshooting.html#next-steps"
+  },"85": {
+    "doc": "Troubleshooting Guide",
+    "title": "Troubleshooting Guide",
+    "content": "Common issues and their solutions when working with dGit. ",
+    "url": "/dgit/troubleshooting.html",
+    
+    "relUrl": "/troubleshooting.html"
+  },"86": {
+    "doc": "Example Workflows",
+    "title": "Basic Workflows",
+    "content": " ",
+    "url": "/dgit/workflows.html#basic-workflows",
+    
+    "relUrl": "/workflows.html#basic-workflows"
+  },"87": {
+    "doc": "Example Workflows",
+    "title": "Starting a New Project",
+    "content": "# Create project directory mkdir my-project cd my-project # Initialize dGit repository dgit init # Create initial files echo \"# My Project\" &gt; README.md touch .gitignore # Stage and commit dgit add README.md .gitignore dgit commit -m \"Initial commit\" . ",
+    "url": "/dgit/workflows.html#starting-a-new-project",
+    
+    "relUrl": "/workflows.html#starting-a-new-project"
+  },"88": {
+    "doc": "Example Workflows",
+    "title": "Development Workflow",
+    "content": "# Create a new feature mkdir src touch src/feature.js # Write some code echo \"function newFeature() { }\" &gt; src/feature.js # Stage and commit dgit add src/feature.js dgit commit -m \"Add new feature\" # Update the feature echo \"function newFeature() { console.log('Hello, World!'); }\" &gt; src/feature.js # Stage and commit dgit add src/feature.js dgit commit -m \"Update new feature\" . ",
+    "url": "/dgit/workflows.html#development-workflow",
+    
+    "relUrl": "/workflows.html#development-workflow"
+  },"89": {
+    "doc": "Example Workflows",
+    "title": "Advanced Usage",
+    "content": " ",
+    "url": "/dgit/workflows.html#advanced-usage",
+    
+    "relUrl": "/workflows.html#advanced-usage"
+  },"90": {
+    "doc": "Example Workflows",
+    "title": "Large Projects",
+    "content": "# Initialize repository dgit init # Create project structure mkdir -p src/{components,utils,styles} touch src/components/{Header,Footer,Main}.js touch src/utils/{helpers,constants}.js touch src/styles/{main,components}.css # Stage everything dgit add . # Create initial commit dgit commit -m \"Project structure setup\" # Stage and commit by component dgit add src/components/Header.js dgit commit -m \"Add Header component\" dgit add src/components/Footer.js dgit commit -m \"Add Footer component\" dgit add src/styles/components.css dgit commit -m \"Add component styles\" . ",
+    "url": "/dgit/workflows.html#large-projects",
+    
+    "relUrl": "/workflows.html#large-projects"
+  },"91": {
+    "doc": "Example Workflows",
+    "title": "Project Organization",
+    "content": "# Create standard project structure mkdir -p {src,tests,docs,scripts} # Create configuration files touch .gitignore touch package.json touch README.md # Stage project setup dgit add .gitignore package.json README.md dgit commit -m \"Project configuration\" # Add source code dgit add src/ dgit commit -m \"Add source code\" # Add tests dgit add tests/ dgit commit -m \"Add test suite\" . ",
+    "url": "/dgit/workflows.html#project-organization",
+    
+    "relUrl": "/workflows.html#project-organization"
+  },"92": {
+    "doc": "Example Workflows",
+    "title": "Best Practices",
+    "content": " ",
+    "url": "/dgit/workflows.html#best-practices",
+    
+    "relUrl": "/workflows.html#best-practices"
+  },"93": {
+    "doc": "Example Workflows",
+    "title": "Commit Messages",
+    "content": "Good commit messages should: . | Be concise but descriptive | Start with a verb | Explain the why, not the what | . Examples: . # Good commit messages dgit commit -m \"Add user authentication module\" dgit commit -m \"Fix memory leak in data processing\" dgit commit -m \"Update documentation with API examples\" # Not so good messages dgit commit -m \"changes\" dgit commit -m \"fix stuff\" dgit commit -m \"wip\" . ",
+    "url": "/dgit/workflows.html#commit-messages",
+    
+    "relUrl": "/workflows.html#commit-messages"
+  },"94": {
+    "doc": "Example Workflows",
+    "title": "File Organization",
+    "content": "Recommended project structure: . project/ ├── src/ # Source code ├── tests/ # Test files ├── docs/ # Documentation ├── scripts/ # Build/deployment scripts ├── .gitignore # Ignore file ├── package.json # Project metadata └── README.md # Project documentation . ",
+    "url": "/dgit/workflows.html#file-organization",
+    
+    "relUrl": "/workflows.html#file-organization"
+  },"95": {
+    "doc": "Example Workflows",
+    "title": "Staging Practices",
+    "content": "Stage related changes together: . # Stage and commit related features dgit add src/auth/login.js src/auth/register.js dgit commit -m \"Implement user authentication\" # Stage and commit related tests dgit add tests/auth/login.test.js tests/auth/register.test.js dgit commit -m \"Add authentication tests\" . ",
+    "url": "/dgit/workflows.html#staging-practices",
+    
+    "relUrl": "/workflows.html#staging-practices"
+  },"96": {
+    "doc": "Example Workflows",
+    "title": "Common Patterns",
+    "content": " ",
+    "url": "/dgit/workflows.html#common-patterns",
+    
+    "relUrl": "/workflows.html#common-patterns"
+  },"97": {
+    "doc": "Example Workflows",
+    "title": "Feature Development",
+    "content": "# Start new feature mkdir -p src/features/new-feature touch src/features/new-feature/{index,utils,types}.js # Initial implementation dgit add src/features/new-feature/ dgit commit -m \"Add new feature structure\" # Add tests mkdir -p tests/features/new-feature touch tests/features/new-feature/index.test.js dgit add tests/features/new-feature/ dgit commit -m \"Add new feature tests\" # Update implementation dgit add src/features/new-feature/ dgit commit -m \"Update new feature implementation\" . ",
+    "url": "/dgit/workflows.html#feature-development",
+    
+    "relUrl": "/workflows.html#feature-development"
+  },"98": {
+    "doc": "Example Workflows",
+    "title": "Next Steps",
+    "content": ". | Review API Reference | Check Troubleshooting | Explore Architecture | . ",
+    "url": "/dgit/workflows.html#next-steps",
+    
+    "relUrl": "/workflows.html#next-steps"
+  },"99": {
+    "doc": "Example Workflows",
+    "title": "Example Workflows",
+    "content": "This guide demonstrates common workflows and best practices when using dGit. ",
+    "url": "/dgit/workflows.html",
+    
+    "relUrl": "/workflows.html"
+  }
+}

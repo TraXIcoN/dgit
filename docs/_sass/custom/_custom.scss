@@ -1,0 +1,319 @@
+@import "custom/dark";
+
+// Layout
+.side-bar {
+  width: 300px;
+  background: #0d1117;
+  border-right: 1px solid #30363d;
+  padding: 0;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.main {
+  margin-left: 300px;
+  max-width: none;
+  min-height: 100vh;
+
+  @media (max-width: 800px) {
+    margin-left: 0;
+  }
+}
+
+.main-content-wrap {
+  padding: 2rem 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+// Smooth Scrolling
+html {
+  scroll-behavior: smooth;
+}
+
+// Content positioning
+.main-content {
+  padding-top: 0;
+
+  h1:first-child {
+    margin-top: 0;
+    padding-top: 0;
+  }
+}
+
+// Base styles
+body {
+  background-color: $body-background-color;
+  color: $body-text-color;
+}
+
+// Main content
+.main-content {
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+  }
+
+  h2 {
+    margin-top: 2.5rem;
+    font-size: 1.75rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: #ffffff;
+    font-weight: 600;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+
+    &:first-child {
+      margin-top: 1rem;
+    }
+  }
+
+  a {
+    color: #58a6ff;
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #79c0ff;
+    }
+  }
+}
+
+// Code blocks
+pre {
+  background: #1c2128 !important;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid #30363d;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  code {
+    color: #e6edf3;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+}
+
+// Inline code
+code {
+  background-color: $code-background-color;
+  border: 1px solid $border-color;
+  border-radius: 4px;
+  padding: 0.2em 0.4em;
+}
+
+// Site Header
+.site-header {
+  padding: 1rem;
+  border-bottom: 1px solid #30363d;
+
+  .site-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-decoration: none;
+
+    &::after {
+      display: none; // Removes the rectangle
+    }
+  }
+}
+
+// Enhanced Navigation
+.site-nav {
+  padding: 1rem 0;
+  width: 100%;
+
+  .nav-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    width: 100%;
+  }
+
+  .nav-list-item {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+
+    .nav-list-link {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #c9d1d9;
+      padding: 0.8rem 1.5rem;
+      width: 100%;
+      font-size: 16px;
+      font-weight: 500;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: block;
+
+      &:hover {
+        background: #21262d;
+        color: #ffffff;
+        transform: translateX(5px);
+      }
+
+      &.active {
+        background: #238636;
+        color: #ffffff;
+        transform: translateX(5px);
+      }
+    }
+  }
+}
+
+// Search
+.search {
+  padding: 1rem;
+
+  .search-input {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: #c9d1d9;
+
+    &:focus {
+      background: #161b22;
+      border-color: #58a6ff;
+    }
+  }
+}
+
+// Tables
+table {
+  background-color: $table-background-color;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin: 2rem 0;
+
+  th {
+    background-color: #21262d;
+    font-weight: 600;
+  }
+
+  th,
+  td {
+    padding: 0.75rem 1rem;
+  }
+}
+
+// Buttons
+.btn {
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 14px;
+  font-weight: 500;
+
+  &-primary {
+    background: #238636;
+    border-color: #2ea043;
+
+    &:hover {
+      background: #2ea043;
+    }
+  }
+}
+
+// Site footer
+.site-footer {
+  border-top: 1px solid $border-color;
+  color: $nav-child-link-color;
+}
+
+// Responsive
+@media (max-width: 800px) {
+  .side-bar {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+
+  .main {
+    margin-left: 0;
+  }
+
+  .main-content-wrap {
+    padding: 1rem;
+  }
+}
+
+// Also hide any other potential checkboxes/buttons
+[type="checkbox"] {
+  display: none;
+}
+
+.btn-reset {
+  display: none;
+}
+
+// Remove checkboxes after code blocks
+.highlight {
+  position: relative;
+
+  &::after,
+  & + .copy,
+  & + .copy-code-button,
+  & + input[type="checkbox"],
+  & + .copy-code-container,
+  & ~ button {
+    display: none !important;
+  }
+}
+
+// Also remove any copy buttons or checkboxes
+.copy-code-button,
+.copy-code-container,
+.copy,
+pre + button,
+pre + input[type="checkbox"],
+.highlight + *[class*="copy"],
+div[class*="highlight"] + button,
+div[class*="highlight"] + input {
+  display: none !important;
+}
+
+// Ensure code blocks are clean
+pre {
+  position: relative;
+
+  &::after,
+  & + button,
+  & + input {
+    display: none !important;
+  }
+}
+
+// Add these styles for Mermaid diagrams
+.mermaid {
+  background-color: #161b22;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  margin: 1rem 0;
+}
+
+// Hide code blocks with mermaid class
+pre.mermaid {
+  display: none;
+}

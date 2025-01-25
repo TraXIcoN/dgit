@@ -1,0 +1,366 @@
+<h1 id="troubleshooting-guide">Troubleshooting Guide</h1>
+
+<p>Common issues and their solutions when working with dGit.</p>
+
+<h2 id="installation-issues">Installation Issues</h2>
+
+<h3 id="command-not-found">Command Not Found</h3>
+
+<p><strong>Problem:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">-bash</span>: dgit: <span class="nb">command </span>not found
+</code></pre></div></div>
+
+<p><strong>Solution:</strong></p>
+
+<ol>
+  <li>Reinstall globally</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npm uninstall <span class="nt">-g</span> dgit
+npm <span class="nb">install</span> <span class="nt">-g</span> dgit
+
+<span class="c"># Or update PATH if installed from source</span>
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">"</span><span class="nv">$PATH</span><span class="s2">:</span><span class="si">$(</span>npm bin <span class="nt">-g</span><span class="si">)</span><span class="s2">"</span>
+</code></pre></div></div>
+
+<ol>
+  <li>Check npm global path:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npm config get prefix
+<span class="c"># Add to PATH if needed</span>
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">"</span><span class="nv">$PATH</span><span class="s2">:</span><span class="si">$(</span>npm config get prefix<span class="si">)</span><span class="s2">/bin"</span>
+</code></pre></div></div>
+
+<h3 id="permission-errors">Permission Errors</h3>
+
+<p><strong>Problem:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npm ERR! Error: EACCES: permission denied
+</code></pre></div></div>
+
+<p><strong>Solutions:</strong></p>
+
+<ol>
+  <li>Use sudo (not recommended):</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>npm <span class="nb">install</span> <span class="nt">-g</span> dgit
+</code></pre></div></div>
+
+<ol>
+  <li>Fix npm permissions (recommended):</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo chown</span> <span class="nt">-R</span> <span class="nv">$USER</span>:<span class="nv">$GROUP</span> ~/.npm
+<span class="nb">sudo chown</span> <span class="nt">-R</span> <span class="nv">$USER</span>:<span class="nv">$GROUP</span> ~/.config
+</code></pre></div></div>
+
+<h2 id="repository-issues">Repository Issues</h2>
+
+<h3 id="invalid-repository">Invalid Repository</h3>
+
+<p><strong>Problem:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Error: not a dgit repository
+</code></pre></div></div>
+
+<p><strong>Solutions:</strong></p>
+
+<ol>
+  <li>Check current directory:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">ls</span> <span class="nt">-la</span> .dgit
+</code></pre></div></div>
+
+<ol>
+  <li>Initialize repository if needed:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>dgit init
+</code></pre></div></div>
+
+<ol>
+  <li>Verify repository structure:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tree .dgit
+</code></pre></div></div>
+
+<h3 id="corrupt-repository">Corrupt Repository</h3>
+
+<p><strong>Problem:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Error: corrupt repository structure
+</code></pre></div></div>
+
+<p><strong>Solutions:</strong></p>
+
+<ol>
+  <li>Check repository integrity:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Verify database</span>
+<span class="nb">ls</span> <span class="nt">-la</span> .dgit/db
+
+<span class="c"># Check objects</span>
+<span class="nb">ls</span> <span class="nt">-la</span> .dgit/objects
+</code></pre></div></div>
+
+<ol>
+  <li>Reinitialize if necessary:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">mv</span> .dgit .dgit_backup
+dgit init
+</code></pre></div></div>
+
+<h2 id="storage-issues">Storage Issues</h2>
+
+<h3 id="database-errors">Database Errors</h3>
+
+<p><strong>Problem:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Error: Failed to access LevelDB database
+</code></pre></div></div>
+
+<p><strong>Solutions:</strong></p>
+
+<ol>
+  <li>Check database lock:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">rm</span> .dgit/db/LOCK
+</code></pre></div></div>
+
+<ol>
+  <li>Verify permissions:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">ls</span> <span class="nt">-la</span> .dgit/db
+<span class="nb">chmod</span> <span class="nt">-R</span> 755 .dgit/db
+</code></pre></div></div>
+
+<ol>
+  <li>Rebuild database:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Backup first</span>
+<span class="nb">cp</span> <span class="nt">-r</span> .dgit/db .dgit/db_backup
+<span class="nb">rm</span> <span class="nt">-rf</span> .dgit/db/<span class="k">*</span>
+dgit init
+</code></pre></div></div>
+
+<h3 id="disk-space-issues">Disk Space Issues</h3>
+
+<p><strong>Problem:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Error: no space left on device
+</code></pre></div></div>
+
+<p><strong>Solutions:</strong></p>
+
+<ol>
+  <li>Check available space:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">df</span> <span class="nt">-h</span> <span class="nb">.</span>
+</code></pre></div></div>
+
+<ol>
+  <li>Clean unnecessary objects:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Coming in future version</span>
+dgit gc
+</code></pre></div></div>
+
+<h2 id="commit-issues">Commit Issues</h2>
+
+<h3 id="staging-failures">Staging Failures</h3>
+
+<p><strong>Problem:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Error: Failed to stage files
+</code></pre></div></div>
+
+<p><strong>Solutions:</strong></p>
+
+<ol>
+  <li>Check file existence:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">ls</span> <span class="nt">-la</span> &lt;file&gt;
+</code></pre></div></div>
+
+<ol>
+  <li>Verify file permissions:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">chmod </span>644 &lt;file&gt;
+</code></pre></div></div>
+
+<ol>
+  <li>Check index state:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cat</span> .dgit/index
+</code></pre></div></div>
+
+<h3 id="commit-failures">Commit Failures</h3>
+
+<p><strong>Problem:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Error: Failed to create commit
+</code></pre></div></div>
+
+<p><strong>Solutions:</strong></p>
+
+<ol>
+  <li>Verify staged changes:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Future version</span>
+dgit status
+</code></pre></div></div>
+
+<ol>
+  <li>Check signing keys:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">ls</span> <span class="nt">-la</span> .dgit/keys
+</code></pre></div></div>
+
+<ol>
+  <li>Regenerate keys if needed:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">rm</span> .dgit/keys/<span class="k">*</span>
+dgit init
+</code></pre></div></div>
+
+<h2 id="performance-issues">Performance Issues</h2>
+
+<h3 id="slow-operations">Slow Operations</h3>
+
+<p><strong>Problem:</strong> Commands taking too long to execute</p>
+
+<p><strong>Solutions:</strong></p>
+
+<ol>
+  <li>Check repository size:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">du</span> <span class="nt">-sh</span> .dgit
+</code></pre></div></div>
+
+<ol>
+  <li>Monitor system resources:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>top
+<span class="nb">df</span> <span class="nt">-h</span>
+</code></pre></div></div>
+
+<ol>
+  <li>Optimize storage:</li>
+</ol>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Coming in future version</span>
+dgit optimize
+</code></pre></div></div>
+
+<h2 id="debugging">Debugging</h2>
+
+<h3 id="enable-debug-logging">Enable Debug Logging</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Set debug environment variable</span>
+<span class="nb">export </span><span class="nv">DEBUG</span><span class="o">=</span>dgit:<span class="k">*</span>
+
+<span class="c"># Run command with debug output</span>
+dgit &lt;<span class="nb">command</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<h3 id="check-system-information">Check System Information</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Node.js version</span>
+node <span class="nt">--version</span>
+
+<span class="c"># npm version</span>
+npm <span class="nt">--version</span>
+
+<span class="c"># dGit version</span>
+dgit <span class="nt">--version</span>
+</code></pre></div></div>
+
+<h3 id="generate-debug-report">Generate Debug Report</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Coming in future version</span>
+dgit debug-report
+</code></pre></div></div>
+
+<h2 id="common-error-messages">Common Error Messages</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Error Code</th>
+      <th>Message</th>
+      <th>Solution</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>E001</td>
+      <td>Repository not found</td>
+      <td>Run <code class="language-plaintext highlighter-rouge">dgit init</code></td>
+    </tr>
+    <tr>
+      <td>E002</td>
+      <td>Invalid object hash</td>
+      <td>Check file integrity</td>
+    </tr>
+    <tr>
+      <td>E003</td>
+      <td>Database access error</td>
+      <td>Check permissions</td>
+    </tr>
+    <tr>
+      <td>E004</td>
+      <td>Commit signing failed</td>
+      <td>Verify keys</td>
+    </tr>
+    <tr>
+      <td>E005</td>
+      <td>Storage full</td>
+      <td>Free disk space</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="getting-help">Getting Help</h2>
+
+<p>If you’re still experiencing issues:</p>
+
+<ol>
+  <li>Check the <a href="https://github.com/yourusername/dgit/issues">GitHub Issues</a></li>
+  <li>Search existing problems</li>
+  <li>Create a new issue with:
+    <ul>
+      <li>Error message</li>
+      <li>Steps to reproduce</li>
+      <li>System information</li>
+      <li>Debug logs</li>
+    </ul>
+  </li>
+</ol>
+
+<h2 id="next-steps">Next Steps</h2>
+
+<ul>
+  <li>Review <a href="./architecture">Architecture</a></li>
+  <li>Check <a href="./api-reference">API Reference</a></li>
+  <li>See <a href="./workflows">Example Workflows</a></li>
+</ul>

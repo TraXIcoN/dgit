@@ -1,0 +1,181 @@
+<h1 id="example-workflows">Example Workflows</h1>
+
+<p>This guide demonstrates common workflows and best practices when using dGit.</p>
+
+<h2 id="basic-workflows">Basic Workflows</h2>
+
+<h3 id="starting-a-new-project">Starting a New Project</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Create project directory</span>
+<span class="nb">mkdir </span>my-project
+<span class="nb">cd </span>my-project
+
+<span class="c"># Initialize dGit repository</span>
+dgit init
+
+<span class="c"># Create initial files</span>
+<span class="nb">echo</span> <span class="s2">"# My Project"</span> <span class="o">&gt;</span> README.md
+<span class="nb">touch</span> .gitignore
+
+<span class="c"># Stage and commit</span>
+dgit add README.md .gitignore
+dgit commit <span class="nt">-m</span> <span class="s2">"Initial commit"</span>
+</code></pre></div></div>
+
+<h3 id="development-workflow">Development Workflow</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="c"># Create a new feature</span>
+<span class="nb">mkdir </span>src
+<span class="nb">touch </span>src/feature.js
+
+<span class="c"># Write some code</span>
+<span class="nb">echo</span> <span class="s2">"function newFeature() { }"</span> <span class="o">&gt;</span> src/feature.js
+
+<span class="c"># Stage and commit</span>
+dgit add src/feature.js
+dgit commit <span class="nt">-m</span> <span class="s2">"Add new feature"</span>
+
+<span class="c"># Update the feature</span>
+<span class="nb">echo</span> <span class="s2">"function newFeature() { console.log('Hello, World!'); }"</span> <span class="o">&gt;</span> src/feature.js
+
+<span class="c"># Stage and commit</span>
+dgit add src/feature.js
+dgit commit <span class="nt">-m</span> <span class="s2">"Update new feature"</span>
+</code></pre></div></div>
+
+<h2 id="advanced-usage">Advanced Usage</h2>
+
+<h3 id="large-projects">Large Projects</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Initialize repository</span>
+dgit init
+
+<span class="c"># Create project structure</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> src/<span class="o">{</span>components,utils,styles<span class="o">}</span>
+<span class="nb">touch </span>src/components/<span class="o">{</span>Header,Footer,Main<span class="o">}</span>.js
+<span class="nb">touch </span>src/utils/<span class="o">{</span>helpers,constants<span class="o">}</span>.js
+<span class="nb">touch </span>src/styles/<span class="o">{</span>main,components<span class="o">}</span>.css
+
+<span class="c"># Stage everything</span>
+dgit add <span class="nb">.</span>
+
+<span class="c"># Create initial commit</span>
+dgit commit <span class="nt">-m</span> <span class="s2">"Project structure setup"</span>
+
+<span class="c"># Stage and commit by component</span>
+dgit add src/components/Header.js
+dgit commit <span class="nt">-m</span> <span class="s2">"Add Header component"</span>
+
+dgit add src/components/Footer.js
+dgit commit <span class="nt">-m</span> <span class="s2">"Add Footer component"</span>
+
+dgit add src/styles/components.css
+dgit commit <span class="nt">-m</span> <span class="s2">"Add component styles"</span>
+</code></pre></div></div>
+
+<h3 id="project-organization">Project Organization</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Create standard project structure</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> <span class="o">{</span>src,tests,docs,scripts<span class="o">}</span>
+
+<span class="c"># Create configuration files</span>
+<span class="nb">touch</span> .gitignore
+<span class="nb">touch </span>package.json
+<span class="nb">touch </span>README.md
+
+<span class="c"># Stage project setup</span>
+dgit add .gitignore package.json README.md
+dgit commit <span class="nt">-m</span> <span class="s2">"Project configuration"</span>
+
+<span class="c"># Add source code</span>
+dgit add src/
+dgit commit <span class="nt">-m</span> <span class="s2">"Add source code"</span>
+
+<span class="c"># Add tests</span>
+dgit add tests/
+dgit commit <span class="nt">-m</span> <span class="s2">"Add test suite"</span>
+</code></pre></div></div>
+
+<h2 id="best-practices">Best Practices</h2>
+
+<h3 id="commit-messages">Commit Messages</h3>
+
+<p>Good commit messages should:</p>
+
+<ul>
+  <li>Be concise but descriptive</li>
+  <li>Start with a verb</li>
+  <li>Explain the why, not the what</li>
+</ul>
+
+<p>Examples:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Good commit messages</span>
+dgit commit <span class="nt">-m</span> <span class="s2">"Add user authentication module"</span>
+dgit commit <span class="nt">-m</span> <span class="s2">"Fix memory leak in data processing"</span>
+dgit commit <span class="nt">-m</span> <span class="s2">"Update documentation with API examples"</span>
+
+<span class="c"># Not so good messages</span>
+dgit commit <span class="nt">-m</span> <span class="s2">"changes"</span>
+dgit commit <span class="nt">-m</span> <span class="s2">"fix stuff"</span>
+dgit commit <span class="nt">-m</span> <span class="s2">"wip"</span>
+</code></pre></div></div>
+
+<h3 id="file-organization">File Organization</h3>
+
+<p>Recommended project structure:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>project/
+├── src/            <span class="c"># Source code</span>
+├── tests/          <span class="c"># Test files</span>
+├── docs/           <span class="c"># Documentation</span>
+├── scripts/        <span class="c"># Build/deployment scripts</span>
+├── .gitignore     <span class="c"># Ignore file</span>
+├── package.json    <span class="c"># Project metadata</span>
+└── README.md      <span class="c"># Project documentation</span>
+</code></pre></div></div>
+
+<h3 id="staging-practices">Staging Practices</h3>
+
+<p>Stage related changes together:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Stage and commit related features</span>
+dgit add src/auth/login.js src/auth/register.js
+dgit commit <span class="nt">-m</span> <span class="s2">"Implement user authentication"</span>
+
+<span class="c"># Stage and commit related tests</span>
+dgit add tests/auth/login.test.js tests/auth/register.test.js
+dgit commit <span class="nt">-m</span> <span class="s2">"Add authentication tests"</span>
+</code></pre></div></div>
+
+<h2 id="common-patterns">Common Patterns</h2>
+
+<h3 id="feature-development">Feature Development</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Start new feature</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> src/features/new-feature
+<span class="nb">touch </span>src/features/new-feature/<span class="o">{</span>index,utils,types<span class="o">}</span>.js
+
+<span class="c"># Initial implementation</span>
+dgit add src/features/new-feature/
+dgit commit <span class="nt">-m</span> <span class="s2">"Add new feature structure"</span>
+
+<span class="c"># Add tests</span>
+<span class="nb">mkdir</span> <span class="nt">-p</span> tests/features/new-feature
+<span class="nb">touch </span>tests/features/new-feature/index.test.js
+dgit add tests/features/new-feature/
+dgit commit <span class="nt">-m</span> <span class="s2">"Add new feature tests"</span>
+
+<span class="c"># Update implementation</span>
+dgit add src/features/new-feature/
+dgit commit <span class="nt">-m</span> <span class="s2">"Update new feature implementation"</span>
+</code></pre></div></div>
+
+<h2 id="next-steps">Next Steps</h2>
+
+<ul>
+  <li>Review <a href="./api-reference">API Reference</a></li>
+  <li>Check <a href="./troubleshooting">Troubleshooting</a></li>
+  <li>Explore <a href="./architecture">Architecture</a></li>
+</ul>
