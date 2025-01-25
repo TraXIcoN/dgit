@@ -3,6 +3,7 @@
 import { program } from "commander";
 import { initRepo } from "../core/init.js";
 import { addFiles } from "../core/add.js";
+import { createCommit } from "../core/commit.js";
 
 program
   .name("dgit")
@@ -18,5 +19,11 @@ program
   .command("add <files...>")
   .description("Add files to the staging area")
   .action(addFiles);
+
+program
+  .command("commit")
+  .description("Create a new commit")
+  .requiredOption("-m, --message <message>", "commit message")
+  .action(createCommit);
 
 program.parse();
