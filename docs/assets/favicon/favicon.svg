@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev/svgjs" width="512" height="512"><svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="#0d1117"></rect>
+  
+  <!-- dG letters -->
+  <path d="M 140,160 
+           C 140,140 150,130 170,130
+           L 200,130
+           L 200,380
+           L 170,380
+           C 150,380 140,370 140,350
+           Z
+           M 170,160
+           L 170,350
+           L 200,350
+           L 200,160
+           Z" fill="#238636"></path>
+  
+  <path d="M 280,130
+           C 340,130 390,180 390,255
+           C 390,330 340,380 280,380
+           C 220,380 170,330 170,255
+           L 200,255
+           C 200,310 235,350 280,350
+           C 325,350 360,310 360,255
+           C 360,200 325,160 280,160
+           C 235,160 200,200 200,255
+           L 170,255
+           C 170,180 220,130 280,130
+           Z" fill="#238636"></path>
+</svg><style>@media (prefers-color-scheme: light) { :root { filter: none; } }
+@media (prefers-color-scheme: dark) { :root { filter: none; } }
+</style></svg>
