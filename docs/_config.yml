@@ -10,6 +10,9 @@ description: Documentation for the dGit decentralized version control system
 baseurl: "/dgit"
 url: "https://yourusername.github.io"
 
+# Add this to ensure proper URL handling
+permalink: pretty
+
 # Color scheme and custom CSS
 color_scheme: dark
 search_enabled: true
@@ -28,7 +31,7 @@ search:
 # Aux links for upper right navigation
 aux_links:
   "dGit on GitHub":
-    - "//github.com/yourusername/dgit"
+    - "//portfolio.adityamohan.me/dgit"
 
 # Makes Aux links open in a new tab
 aux_links_new_tab: true
