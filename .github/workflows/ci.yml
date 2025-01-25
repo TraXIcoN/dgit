@@ -1,0 +1,58 @@
+name: dGit CI Pipeline
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (if using JS/TS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Set up Python (if using Python)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          fi
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: Run static analysis (Linting)
+        run: |
+          if [ -f package.json ]; then
+            npm run lint
+          fi
+          if [ -f .flake8 ]; then
+            flake8 .
+          fi
+
+      - name: Run tests
+        run: |
+          if [ -f package.json ]; then
+            npm test
+          fi
+          if [ -f pytest.ini ]; then
+            pytest
+          fi
+
+      - name: Build project (if applicable)
+        run: |
+          if [ -f package.json ]; then
+            npm run build
+          fi
